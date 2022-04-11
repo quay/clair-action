@@ -1,0 +1,49 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/quay/claircore/libvuln"
+	"github.com/urfave/cli/v2"
+)
+
+var updateCmd = &cli.Command{
+	Name:    "update",
+	Aliases: []string{"r"},
+	Usage:   "update the database",
+	Action:  update,
+	Flags: []cli.Flag{
+		&cli.PathFlag{
+			Name:    "db-path",
+			Value:   "",
+			Usage:   "where to look for the matcher DB",
+			EnvVars: []string{"DB_PATH"},
+		},
+	},
+}
+
+func update(c *cli.Context) error {
+	ctx := c.Context
+	dbPath := c.String("db-path")
+	matcherStore, err := NewSQLiteMatcherStore(dbPath, true)
+	if err != nil {
+		return fmt.Errorf("error creating sqlite backend: %v", err)
+	}
+
+	matcherOpts := &libvuln.Options{
+		Store:                    matcherStore,
+		Locker:                   NewLocalLockSource(),
+		DisableBackgroundUpdates: true,
+		UpdateWorkers:            1,
+	}
+
+	lv, err := libvuln.New(ctx, matcherOpts)
+	if err != nil {
+		return fmt.Errorf("error creating Libvuln: %v", err)
+	}
+
+	if err := lv.FetchUpdates(ctx); err != nil {
+		return fmt.Errorf("error updating vulnerabilities: %v", err)
+	}
+	return nil
+}

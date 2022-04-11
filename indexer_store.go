@@ -86,6 +86,10 @@ func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.P
 	m.ls.lock.Lock()
 	defer m.ls.lock.Unlock()
 	for _, p := range pkgs {
+		if p.Source == nil {
+			p.Source = &claircore.Package{}
+		}
+
 		p.ID = uuid.New().String()
 		m.ls.pkgMap[l.Hash.String()] = append(m.ls.pkgMap[l.Hash.String()], p)
 	}

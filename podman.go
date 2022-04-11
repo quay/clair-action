@@ -1,76 +1,130 @@
 package main
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/quay/claircore"
-
-	"github.com/containers/podman/v4/pkg/bindings"
-	"github.com/containers/podman/v4/pkg/bindings/images"
-	"github.com/containers/podman/v4/pkg/domain/entities"
 )
 
 type Image interface {
-	GetLayers() ([]*claircore.Layer, error)
-	GetImageDigest() (claircore.Digest, error)
+	GetManifest() (claircore.Manifest, error)
 }
 
 var _ Image = (*podmanImage)(nil)
 
+type index struct {
+	Manifests []*manifest `json:"manifests"`
+}
+
+type manifest struct {
+	Digest string `json:"digest"`
+}
+
 type podmanImage struct {
-	info *entities.ImageInspectReport
+	imageDigest string
+	layerPaths  []string
 }
 
-func NewPodmanImage(ctx context.Context, imageTag string) (*podmanImage, error) {
-	sockDir := os.Getenv("XDG_RUNTIME_DIR")
-	socket := "unix:" + sockDir + "/podman/podman.sock"
-	connText, err := bindings.NewConnection(ctx, socket)
+func NewPodmanImage(ctx context.Context, exportDir string) (*podmanImage, error) {
+	f, err := os.Open(exportDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
 	}
-	info, err := images.GetImage(connText, imageTag, &images.GetOptions{})
-	if err != nil {
-		return nil, err
+
+	pi := &podmanImage{}
+
+	tr := tar.NewReader(f)
+	hdr, err := tr.Next()
+	for ; err == nil; hdr, err = tr.Next() {
+		_, fn := filepath.Split(hdr.Name)
+		if strings.HasPrefix(hdr.Name, "blobs/sha256/") && hdr.Typeflag == tar.TypeReg {
+			peekBytes := make([]byte, 1)
+			_, err := tr.Read(peekBytes)
+			if err != nil {
+				return nil, err
+			}
+			if string(peekBytes) == "{" {
+				continue
+			}
+
+			b := bytes.NewBuffer(peekBytes)
+			_, err = io.Copy(b, tr)
+			if err != nil {
+				return nil, err
+			}
+
+			gr, err := gzip.NewReader(b)
+			if err != nil {
+				return nil, err
+			}
+
+			_, fn := filepath.Split(hdr.Name)
+			layerFile, err := os.OpenFile("/tmp/sha256:"+fn, os.O_CREATE|os.O_RDWR, os.FileMode(0600))
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = io.Copy(layerFile, gr)
+			if err != nil {
+				return nil, err
+			}
+
+			pi.layerPaths = append(pi.layerPaths, layerFile.Name())
+			layerFile.Close()
+		}
+		if fn == "index.json" {
+			i := &index{}
+			b, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(b, i)
+			if err != nil {
+				return nil, err
+			}
+			pi.imageDigest = i.Manifests[0].Digest
+		}
 	}
-	return &podmanImage{info}, nil
+	return pi, nil
 }
 
-func (i *podmanImage) GetLayers() ([]*claircore.Layer, error) {
-	if i.info == nil {
+func (i *podmanImage) getLayers() ([]*claircore.Layer, error) {
+	if len(i.layerPaths) == 0 {
 		return nil, nil
 	}
 	layers := []*claircore.Layer{}
-	upperDir := i.info.GraphDriver.Data["UpperDir"]
-	ud := path.Dir(path.Dir(upperDir))
-	for _, layerStr := range i.info.RootFS.Layers {
-		hash, err := claircore.ParseDigest(layerStr.String())
+	for _, layerStr := range i.layerPaths {
+
+		_, d := filepath.Split(layerStr)
+		hash, err := claircore.ParseDigest(d)
 		if err != nil {
 			return nil, err
 		}
-		check := strings.Split(layerStr.String(), ":")[1]
 		l := &claircore.Layer{
 			Hash: hash,
-			URI:  path.Join(ud, check, "diff"),
+			URI:  layerStr,
 		}
 		layers = append(layers, l)
 	}
 	return layers, nil
 }
 
-func (i *podmanImage) GetImageDigest() (claircore.Digest, error) {
-	return claircore.ParseDigest(string(i.info.Digest))
-}
-
 func (i *podmanImage) GetManifest() (claircore.Manifest, error) {
-	digest, err := i.GetImageDigest()
+	digest, err := claircore.ParseDigest(i.imageDigest)
 	if err != nil {
 		return claircore.Manifest{}, err
 	}
 
-	layers, err := i.GetLayers()
+	layers, err := i.getLayers()
 	if err != nil {
 		return claircore.Manifest{}, err
 	}

@@ -1,1 +1,4 @@
-vendor/
+# TODO (crozzy): once claircore PRs are merged, add vendor and build
+/local-clair
+/matcher.db
+/testdata

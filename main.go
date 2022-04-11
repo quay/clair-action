@@ -1,56 +1,27 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"log"
 	"os"
 
-	"github.com/quay/claircore/libindex"
-	"github.com/quay/claircore/libvuln/updates"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	ctx := context.Background()
-
-	imgName := os.Getenv("IMAGE_TAG")
-	if imgName == "" {
-		fmt.Printf("no $IMAGE_TAG set")
+	app := &cli.App{
+		Name:                 "local-clair",
+		Version:              "0.0.1",
+		Usage:                "./local-clair --help",
+		Description:          "A CLI application for running Clair v4 locally.",
+		EnableBashCompletion: true,
+		Commands: []*cli.Command{
+			reportCmd,
+			updateCmd,
+		},
 	}
 
-	img, err := NewPodmanImage(ctx, imgName)
+	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Printf("error getting image information %v\n", err)
-		return
+		log.Fatal(err)
 	}
-
-	mf, err := img.GetManifest()
-	if err != nil {
-		fmt.Printf("error creating manifest %v\n", err)
-		return
-	}
-
-	indexerOpts := &libindex.Options{
-		Store:      NewLocalIndexerStore(),
-		Locker:     updates.NewLocalLockSource(),
-		FetchArena: &LocalFetchArena{},
-	}
-	li, err := libindex.New(ctx, indexerOpts, http.DefaultClient)
-	if err != nil {
-		fmt.Printf("error creating Libindex %v\n", err)
-		return
-	}
-	ir, err := li.Index(ctx, &mf)
-	if err != nil {
-		fmt.Printf("error creating index report %v\n", err)
-		return
-	}
-
-	blob, err := json.MarshalIndent(ir, "", "  ")
-	if err != nil {
-		fmt.Printf("error marshaling index report %v\n", err)
-		return
-	}
-	fmt.Println(string(blob))
 }
