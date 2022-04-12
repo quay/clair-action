@@ -1,9 +1,10 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - 'main'
+  workflow_dispatch: {}
+  # Run every day at 5AM UTC
+  schedule:
+    - cron: '0 5 * * *'
 
 jobs:
   docker:
@@ -26,6 +27,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: quay.io/crozzy/local-clair:${{ github.sha }}
+          tags: quay.io/crozzy/local-clair:latest
           build-args: |
-            REBUILD_DB=0
+            REBUILD_DB=1
