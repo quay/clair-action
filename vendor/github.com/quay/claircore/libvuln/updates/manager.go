@@ -149,8 +149,6 @@ func (m *Manager) Run(ctx context.Context) error {
 		}
 		updaters = append(updaters, set.Updaters()...)
 	}
-	fmt.Println("HERE....")
-	fmt.Println(updaters)
 
 	// configure updaters
 	toRun := make([]driver.Updater, 0, len(updaters))

@@ -2,7 +2,6 @@ package matcher
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/quay/zlog"
@@ -80,7 +79,6 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	zlog.Debug(ctx).
 		Int("filtered", len(filteredVulns)).
 		Msg("filtered")
-	fmt.Println(filteredVulns)
 	return filteredVulns, nil
 }
 
