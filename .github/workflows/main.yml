@@ -27,3 +27,5 @@ jobs:
         with:
           push: true
           tags: quay.io/crozzy/local-clair:${{ github.sha }}
+          build-args: |
+            REBUILD_DB=0
