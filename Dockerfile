@@ -11,4 +11,4 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal AS final
 RUN microdnf install --disablerepo=* --enablerepo=ubi-8-baseos --enablerepo=ubi-8-appstream sqlite device-mapper
 
 COPY --from=build /build/local-clair /bin/local-clair
-COPY --from=build /build/matcher /matcher
+# COPY --from=build /build/matcher /matcher
