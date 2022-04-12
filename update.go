@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/quay/claircore/libvuln"
-	_ "github.com/quay/claircore/matchers/defaults"
+	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/urfave/cli/v2"
 )
 

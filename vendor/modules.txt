@@ -143,6 +143,7 @@ github.com/quay/claircore/datastore/postgres
 github.com/quay/claircore/datastore/postgres/migrations
 github.com/quay/claircore/debian
 github.com/quay/claircore/dpkg
+github.com/quay/claircore/enricher/cvss
 github.com/quay/claircore/indexer
 github.com/quay/claircore/indexer/controller
 github.com/quay/claircore/indexer/layerscanner
@@ -170,6 +171,7 @@ github.com/quay/claircore/pkg/pep440
 github.com/quay/claircore/pkg/poolstats
 github.com/quay/claircore/pkg/tmp
 github.com/quay/claircore/python
+github.com/quay/claircore/pyupio
 github.com/quay/claircore/rhel
 github.com/quay/claircore/rhel/containerapi
 github.com/quay/claircore/rhel/contentmanifest
@@ -180,6 +182,7 @@ github.com/quay/claircore/rpm
 github.com/quay/claircore/suse
 github.com/quay/claircore/ubuntu
 github.com/quay/claircore/updater
+github.com/quay/claircore/updater/defaults
 # github.com/quay/claircore/toolkit v1.0.0 => ../claircore/toolkit
 ## explicit; go 1.16
 github.com/quay/claircore/toolkit/types
