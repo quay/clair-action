@@ -1,4 +1,5 @@
 ARG GO_VERSION=1.18
+ARG BUILD_DB
 FROM quay.io/projectquay/golang:${GO_VERSION} AS build
 RUN dnf install -y --disablerepo=* --enablerepo=ubi-8-baseos --enablerepo=ubi-8-appstream --enablerepo=ubi-8-codeready-builder gpgme-devel device-mapper-devel
 WORKDIR /build/
@@ -11,4 +12,5 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal AS final
 RUN microdnf install --disablerepo=* --enablerepo=ubi-8-baseos --enablerepo=ubi-8-appstream sqlite device-mapper
 
 COPY --from=build /build/local-clair /bin/local-clair
-# COPY --from=build /build/matcher /matcher
+RUN DB_PATH=/matcher /bin/local-clair update
+RUN if [ "$BUILD_DB" = "1" ] ; then DB_PATH=/matcher /bin/local-clair update ; fi

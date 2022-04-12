@@ -27,15 +27,3 @@ jobs:
         with:
           push: true
           tags: quay.io/crozzy/local-clair:${{ github.sha }}
-
-  update-vulnerability-db:
-    needs: ['docker']
-    runs-on: ubuntu-latest
-    container: quay.io/crozzy/local-clair:${{ github.sha }}
-    steps:
-      - name: Update Vulnerabilities
-        run: |
-          DB_PATH=/matcher /bin/local-clair update
-      - name: Bundle
-        run: |
-          ls -l /
