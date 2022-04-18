@@ -8,7 +8,7 @@
           "name": "Clair V4",
           "informationUri": "https://github.com/quay/clair",
           "fullName": "Clair V4 Vulnerability Scanner",
-          "version": "v0.0.1",
+          "version": "v0.0.1"
         }
       },
       "results": [
@@ -24,12 +24,7 @@
           "ruleIndex": {{ $index }},
           "level": "error",
           "message": {
-            "text": {0} - {1} - {2} {{ endWithPeriod $vulnerability.Description | printf "%q" }},
-            "arguments": [
-                {{ $vulnerability.Package.Name }},
-                {{ $vulnerability.Package.Version }},
-                {{ $vulnerability.NormalizedSeverity }},
-            ]
+            "text": "[{{ $vulnerability.Package.Name }} - {{ $vulnerability.Package.Version }} - {{ $vulnerability.NormalizedSeverity }}] {{ endWithPeriod $vulnerability.Description | printf "%q" }}"
           },
           "locations": [{
             "physicalLocation": {
