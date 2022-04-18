@@ -1,16 +1,18 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"html"
 	"html/template"
 	"io"
-	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/quay/claircore"
 )
+
+//go:embed templates/*
+var templates embed.FS
 
 type TemplateWriter struct {
 	Output   io.Writer
@@ -44,12 +46,7 @@ func NewTemplateWriter(output io.Writer, outputTemplate string) (*TemplateWriter
 }
 
 func NewSarifWriter(buf io.Writer) (*TemplateWriter, error) {
-	tf, err := os.Open("templates/sarif.tpl")
-	if err != nil {
-		return nil, err
-	}
-	defer tf.Close()
-	tfb, err := ioutil.ReadAll(tf)
+	tfb, err := templates.ReadFile("templates/sarif.tpl")
 	if err != nil {
 		return nil, err
 	}
