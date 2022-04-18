@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln"
@@ -78,22 +78,31 @@ func report(c *cli.Context) error {
 	}
 	li, err := libindex.New(ctx, indexerOpts, http.DefaultClient)
 	if err != nil {
-		return fmt.Errorf("error creating Libindex %v\n", err)
+		return fmt.Errorf("error creating Libindex %v", err)
 	}
 	ir, err := li.Index(ctx, &mf)
 	if err != nil {
-		return fmt.Errorf("error creating index report %v\n", err)
+		return fmt.Errorf("error creating index report %v", err)
 	}
 
 	vr, err := lv.Scan(ctx, ir)
 	if err != nil {
-		return fmt.Errorf("error scanning index report %v\n", err)
+		return fmt.Errorf("error scanning index report %v", err)
 	}
 
-	blob, err := json.MarshalIndent(vr, "", "  ")
+	// b, err := json.MarshalIndent(vr, "", "  ")
+	// if err != nil {
+	// 	return fmt.Errorf("could not marshal vulnerability report: %v", err)
+	// }
+	// fmt.Println(string(b))
+
+	tw, err := NewSarifWriter(os.Stdout)
 	if err != nil {
-		return fmt.Errorf("error marshaling index report %v\n", err)
+		return fmt.Errorf("error creating sarif report writer %v", err)
 	}
-	fmt.Println(string(blob))
+	err = tw.Write(vr)
+	if err != nil {
+		return fmt.Errorf("error writing sarif report %v", err)
+	}
 	return nil
 }

@@ -1,4 +1,4 @@
-name: ci
+name: db_update
 
 on:
   workflow_dispatch: {}
