@@ -8,38 +8,74 @@
           "name": "Clair V4",
           "informationUri": "https://github.com/quay/clair",
           "fullName": "Clair V4 Vulnerability Scanner",
-          "version": "v0.0.1"
+          "version": "v0.0.1",
+          "rules": [
+          {{- $t_first := true }}
+            {{- range $package_id, $vulnerability_list := .PackageVulnerabilities -}}
+              {{- range $vuln_id := $vulnerability_list -}}
+                {{- if $t_first -}}
+                  {{- $t_first = false -}}
+                {{ else -}}
+                  ,
+                {{- end }}
+                  {
+                  "id": "{{ $vuln_id }}-{{ $package_id }}",
+                  "name": "scan_results",
+                  "shortDescription": {
+                    "text": "{{ with ( index $.Packages $package_id ) }}{{ .Name }}{{ end }} - {{ with ( index $.Packages $package_id ) }}{{ .Version }}{{ end }} - {{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .Name }}{{ end }}"
+                  },
+                  "fullDescription": {
+                    "text": {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ (.Description | escapeString) | js }}"{{ end }}
+                  },
+                  "help": {
+                    "text": {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ (.Description | escapeString) | js }}\n\nFixed In: {{ .FixedInVersion }}"{{ end }}
+                  },
+                  "properties": {
+                    "tags": [
+                      "vulnerability",
+                      {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ .Repo.Name }}"{{ end }},
+                      {{ with ( index $.Packages $package_id ) }}"{{ .Name }}"{{ end }},
+                      {{ with ( index $.Packages $package_id ) }}"{{ .Version }}"{{ end }}
+                    ],
+                    "precision": "very-high"
+                  }
+                }
+               {{- end -}}
+             {{- end -}}
+            ]
         }
       },
       "results": [
-    {{- $t_first := true }}
-        {{- range $index, $vulnerability := .Vulnerabilities -}}
-          {{- if $t_first -}}
-            {{- $t_first = false -}}
-          {{ else -}}
-            ,
-          {{- end }}
-        {
-          "ruleId": "{{ $vulnerability.ID }}",
-          "ruleIndex": {{ $index }},
-          "level": "error",
-          "message": {
-            "text": "[{{ $vulnerability.Package.Name }} - {{ $vulnerability.Package.Version }} - {{ $vulnerability.NormalizedSeverity }}] {{ endWithPeriod $vulnerability.Description | printf "%q" }}"
-          },
-          "locations": [{
-            "physicalLocation": {
-              "artifactLocation": {
-                "uri": "Dockerfile"
+      {{- $t_first := true }}
+        {{- range $package_id, $vulnerability_list := .PackageVulnerabilities -}}
+          {{- range $vuln_id := $vulnerability_list -}}
+            {{- if $t_first -}}
+              {{- $t_first = false -}}
+            {{ else -}}
+              ,
+            {{- end }}
+            {
+              "ruleId": "{{ $vuln_id }}-{{ $package_id }}",
+              "ruleIndex": {{ $vuln_id }},
+              "level": "error",
+              "message": {
+                "text": "{{ with ( index $.Packages $package_id ) }}{{ .Name }}{{ end }} - {{ with ( index $.Packages $package_id ) }}{{ .Version }}{{ end }} - {{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .Name }}{{ end }}"
               },
-              "region": {
-                "startLine": 1,
-                "startColumn": 1,
-                "endColumn": 1
-              }
+              "locations": [{
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "Dockerfile"
+                  },
+                  "region": {
+                    "startLine": 1,
+                    "startColumn": 1,
+                    "endColumn": 1
+                  }
+                }
+              }]
             }
-          }]
-        }
-        {{- end -}}
+          {{- end }}
+        {{- end }}
       ],
       "columnKind": "utf16CodeUnits"
     }
