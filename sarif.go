@@ -29,12 +29,6 @@ func (tw TemplateWriter) Write(vr *claircore.VulnerabilityReport) error {
 
 func NewTemplateWriter(output io.Writer, outputTemplate string) (*TemplateWriter, error) {
 	templateFuncMap := template.FuncMap{}
-	templateFuncMap["endWithPeriod"] = func(input string) string {
-		if !strings.HasSuffix(input, ".") {
-			input += "."
-		}
-		return input
-	}
 	templateFuncMap["escapeString"] = func(input string) string {
 		return strings.ReplaceAll(html.EscapeString(input), "\\", "\\\\")
 	}

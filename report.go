@@ -61,7 +61,7 @@ func report(c *cli.Context) error {
 		return fmt.Errorf("error creating Libvuln: %v", err)
 	}
 
-	img, err := NewDockerImage(ctx, imgPath, "/tmp")
+	img, err := NewDockerLocalImage(ctx, imgPath, "/tmp")
 	if err != nil {
 		return fmt.Errorf("error getting image information %v", err)
 	}

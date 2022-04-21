@@ -19,7 +19,7 @@ type Image interface {
 	GetManifest() (claircore.Manifest, error)
 }
 
-var _ Image = (*podmanImage)(nil)
+var _ Image = (*podmanLocalImage)(nil)
 
 type index struct {
 	Manifests []*manifest `json:"manifests"`
@@ -29,18 +29,18 @@ type manifest struct {
 	Digest string `json:"digest"`
 }
 
-type podmanImage struct {
+type podmanLocalImage struct {
 	imageDigest string
 	layerPaths  []string
 }
 
-func NewPodmanImage(ctx context.Context, exportDir string) (*podmanImage, error) {
+func NewPodmanLocalImage(ctx context.Context, exportDir string) (*podmanLocalImage, error) {
 	f, err := os.Open(exportDir)
 	if err != nil {
 		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
 	}
 
-	pi := &podmanImage{}
+	pi := &podmanLocalImage{}
 
 	tr := tar.NewReader(f)
 	hdr, err := tr.Next()
@@ -97,7 +97,7 @@ func NewPodmanImage(ctx context.Context, exportDir string) (*podmanImage, error)
 	return pi, nil
 }
 
-func (i *podmanImage) getLayers() ([]*claircore.Layer, error) {
+func (i *podmanLocalImage) getLayers() ([]*claircore.Layer, error) {
 	if len(i.layerPaths) == 0 {
 		return nil, nil
 	}
@@ -118,7 +118,7 @@ func (i *podmanImage) getLayers() ([]*claircore.Layer, error) {
 	return layers, nil
 }
 
-func (i *podmanImage) GetManifest() (claircore.Manifest, error) {
+func (i *podmanLocalImage) GetManifest() (claircore.Manifest, error) {
 	digest, err := claircore.ParseDigest(i.imageDigest)
 	if err != nil {
 		return claircore.Manifest{}, err

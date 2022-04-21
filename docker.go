@@ -13,25 +13,25 @@ import (
 	"github.com/quay/claircore"
 )
 
-var _ Image = (*dockerImage)(nil)
+var _ Image = (*dockerLocalImage)(nil)
 
 type imageInfo struct {
 	Config string   `json:"Config"`
 	Layers []string `json:"Layers"`
 }
 
-type dockerImage struct {
+type dockerLocalImage struct {
 	imageDigest string
 	layerPaths  []string
 }
 
-func NewDockerImage(ctx context.Context, exportDir string, importDir string) (*dockerImage, error) {
+func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string) (*dockerLocalImage, error) {
 	f, err := os.Open(exportDir)
 	if err != nil {
 		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
 	}
 
-	di := &dockerImage{}
+	di := &dockerLocalImage{}
 
 	tr := tar.NewReader(f)
 	hdr, err := tr.Next()
@@ -72,7 +72,7 @@ func NewDockerImage(ctx context.Context, exportDir string, importDir string) (*d
 	return di, nil
 }
 
-func (i *dockerImage) getLayers() ([]*claircore.Layer, error) {
+func (i *dockerLocalImage) getLayers() ([]*claircore.Layer, error) {
 	if len(i.layerPaths) == 0 {
 		return nil, nil
 	}
@@ -93,7 +93,7 @@ func (i *dockerImage) getLayers() ([]*claircore.Layer, error) {
 	return layers, nil
 }
 
-func (i *dockerImage) GetManifest() (claircore.Manifest, error) {
+func (i *dockerLocalImage) GetManifest() (claircore.Manifest, error) {
 	digest, err := claircore.ParseDigest(i.imageDigest)
 	if err != nil {
 		return claircore.Manifest{}, err
