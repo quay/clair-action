@@ -28,7 +28,7 @@
                     "text": {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ (.Description | escapeString) | js }}"{{ end }}
                   },
                   "help": {
-                    "text": {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ (.Description | escapeString) | js }}\n\nFixed In: {{ .FixedInVersion }}"{{ end }}
+                    "text": {{ with ( index $.Vulnerabilities $vuln_id ) }}"{{ (.Description | escapeString) | js }}{{- if ne .FixedInVersion "" }}\n\nFixed In: {{- end }}{{ .FixedInVersion }}"{{ end }}
                   },
                   "properties": {
                     "tags": [

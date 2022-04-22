@@ -15,6 +15,10 @@ import (
 
 var _ Image = (*dockerLocalImage)(nil)
 
+type Image interface {
+	GetManifest(context.Context) (*claircore.Manifest, error)
+}
+
 type imageInfo struct {
 	Config string   `json:"Config"`
 	Layers []string `json:"Layers"`
@@ -93,19 +97,31 @@ func (i *dockerLocalImage) getLayers() ([]*claircore.Layer, error) {
 	return layers, nil
 }
 
-func (i *dockerLocalImage) GetManifest() (claircore.Manifest, error) {
+func (i *dockerLocalImage) GetManifest(_ context.Context) (*claircore.Manifest, error) {
 	digest, err := claircore.ParseDigest(i.imageDigest)
 	if err != nil {
-		return claircore.Manifest{}, err
+		return nil, err
 	}
 
 	layers, err := i.getLayers()
 	if err != nil {
-		return claircore.Manifest{}, err
+		return nil, err
 	}
 
-	return claircore.Manifest{
+	return &claircore.Manifest{
 		Hash:   digest,
 		Layers: layers,
 	}, nil
+}
+
+type dockerRemoteImage struct {
+	ref string
+}
+
+func NewDockerRemoteImage(ctx context.Context, imgRef string) (*dockerRemoteImage, error) {
+	return &dockerRemoteImage{ref: imgRef}, nil
+}
+
+func (i *dockerRemoteImage) GetManifest(ctx context.Context) (*claircore.Manifest, error) {
+	return Inspect(ctx, i.ref)
 }

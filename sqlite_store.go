@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -396,8 +397,71 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 
 }
 
+func makePlaceholders(startIndex, length int) string {
+	str := ""
+	for i := startIndex; i < length+startIndex; i++ {
+		str = str + fmt.Sprintf("$%d,", i)
+	}
+	return "(" + strings.TrimRight(str, ",") + ")"
+}
+
 func (ms *sqliteMatcherStore) GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error) {
-	return []driver.EnrichmentRecord{}, nil
+	var query = `
+	WITH
+		latest
+			AS (
+				SELECT
+					max(id) AS id
+				FROM
+					update_operation
+				WHERE
+					updater = $1
+			)
+	SELECT
+		e.tags, e.data
+	FROM
+		enrichment AS e,
+		uo_enrich AS uo,
+		latest,
+		json_each(e.tags)
+	WHERE
+		uo.uo = latest.id
+		AND uo.enrich = e.id
+		AND json_each.value IN ` + makePlaceholders(2, len(tags)) + ";"
+
+	tx, err := ms.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	results := make([]driver.EnrichmentRecord, 0, 8) // Guess at capacity.
+	args := []interface{}{kind}
+	for _, v := range tags {
+		args = append(args, v)
+	}
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	i := 0
+	for rows.Next() {
+		results = append(results, driver.EnrichmentRecord{})
+		r := &results[i]
+		var tags = []byte{}
+		if err := rows.Scan(&tags, &r.Enrichment); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(tags, &r.Tags); err != nil {
+			return nil, err
+		}
+		i++
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 // GetUpdateOperations returns a list of UpdateOperations in date descending
