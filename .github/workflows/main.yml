@@ -27,6 +27,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: quay.io/crozzy/local-clair:latest
+          tags: quay.io/crozzy/clair-sqlite-db:latest
           build-args: |
             REBUILD_DB=1

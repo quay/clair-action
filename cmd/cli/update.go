@@ -6,6 +6,8 @@ import (
 	"github.com/quay/claircore/libvuln"
 	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/urfave/cli/v2"
+
+	"github.com/crozzy/local-clair/datastore"
 )
 
 var updateCmd = &cli.Command{
@@ -26,7 +28,7 @@ var updateCmd = &cli.Command{
 func update(c *cli.Context) error {
 	ctx := c.Context
 	dbPath := c.String("db-path")
-	matcherStore, err := NewSQLiteMatcherStore(dbPath, true)
+	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)
 	if err != nil {
 		return fmt.Errorf("error creating sqlite backend: %v", err)
 	}

@@ -1,4 +1,4 @@
-package main
+package image
 
 import (
 	"archive/tar"
@@ -118,8 +118,8 @@ type dockerRemoteImage struct {
 	ref string
 }
 
-func NewDockerRemoteImage(ctx context.Context, imgRef string) (*dockerRemoteImage, error) {
-	return &dockerRemoteImage{ref: imgRef}, nil
+func NewDockerRemoteImage(ctx context.Context, imgRef string) *dockerRemoteImage {
+	return &dockerRemoteImage{ref: imgRef}
 }
 
 func (i *dockerRemoteImage) GetManifest(ctx context.Context) (*claircore.Manifest, error) {

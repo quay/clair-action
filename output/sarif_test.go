@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"bytes"
@@ -36,6 +36,4 @@ func TestTemplateRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing template: %v", err)
 	}
-
-	t.Error(buf.String())
 }

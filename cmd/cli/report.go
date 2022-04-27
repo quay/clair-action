@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libindex"
@@ -11,6 +13,39 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	_ "github.com/quay/claircore/matchers/defaults"
 	"github.com/urfave/cli/v2"
+
+	"github.com/crozzy/local-clair/datastore"
+	"github.com/crozzy/local-clair/image"
+	"github.com/crozzy/local-clair/output"
+)
+
+type EnumValue struct {
+	Enum     []string
+	Default  string
+	selected string
+}
+
+func (e *EnumValue) Set(value string) error {
+	for _, enum := range e.Enum {
+		if enum == value {
+			e.selected = value
+			return nil
+		}
+	}
+
+	return fmt.Errorf("allowed values are %s", strings.Join(e.Enum, ", "))
+}
+
+func (e EnumValue) String() string {
+	if e.selected == "" {
+		return e.Default
+	}
+	return e.selected
+}
+
+const (
+	clairFmt = "clair"
+	sarifFmt = "sarif"
 )
 
 var reportCmd = &cli.Command{
@@ -37,43 +72,54 @@ var reportCmd = &cli.Command{
 			Usage:   "the remote location of the image",
 			EnvVars: []string{"IMAGE_REF"},
 		},
+		&cli.GenericFlag{
+			Name:    "output",
+			Aliases: []string{"o"},
+			Value: &EnumValue{
+				Enum:    []string{clairFmt, sarifFmt},
+				Default: clairFmt,
+			},
+			Usage:   "what output format the results should be in",
+			EnvVars: []string{"OUTPUT"},
+		},
 	},
 }
 
 func report(c *cli.Context) error {
 	ctx := c.Context
 
-	imgRef := c.String("image-ref")
-	imgPath := c.String("image-path")
-	fmt.Println(imgRef)
-
 	var (
-		img Image
-		fa  libindex.Arena
-		err error
+		// All arguments
+		imgRef  = c.String("image-ref")
+		imgPath = c.String("image-path")
+		dbPath  = c.String("db-path")
 	)
 
+	var (
+		img image.Image
+		fa  libindex.Arena
+	)
 	switch {
 	case imgPath != "":
 		fa = &LocalFetchArena{}
-		img, err = NewDockerLocalImage(ctx, imgPath, os.TempDir())
+		var err error
+		img, err = image.NewDockerLocalImage(ctx, imgPath, os.TempDir())
+		if err != nil {
+			return fmt.Errorf("error getting image information %v", err)
+		}
 	case imgRef != "":
 		cl := http.DefaultClient
 		fa = libindex.NewRemoteFetchArena(cl, os.TempDir())
-		img, err = NewDockerRemoteImage(ctx, imgRef)
+		img = image.NewDockerRemoteImage(ctx, imgRef)
 	default:
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
 	}
-	if err != nil {
-		return fmt.Errorf("error getting image information %v", err)
-	}
 
-	dbPath := c.String("db-path")
 	if dbPath == "" {
 		return fmt.Errorf("no $DB_PATH or --db-path set")
 	}
 
-	matcherStore, err := NewSQLiteMatcherStore(dbPath, true)
+	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)
 	if err != nil {
 		return fmt.Errorf("error creating sqlite backend: %v", err)
 	}
@@ -98,7 +144,7 @@ func report(c *cli.Context) error {
 	}
 
 	indexerOpts := &libindex.Options{
-		Store:      NewLocalIndexerStore(),
+		Store:      datastore.NewLocalIndexerStore(),
 		Locker:     NewLocalLockSource(),
 		FetchArena: fa,
 	}
@@ -116,19 +162,23 @@ func report(c *cli.Context) error {
 		return fmt.Errorf("error scanning index report %v", err)
 	}
 
-	// b, err := json.MarshalIndent(vr, "", "  ")
-	// if err != nil {
-	// 	return fmt.Errorf("could not marshal vulnerability report: %v", err)
-	// }
-	// fmt.Println(string(b))
+	switch c.String("output") {
+	case sarifFmt:
+		tw, err := output.NewSarifWriter(os.Stdout)
+		if err != nil {
+			return fmt.Errorf("error creating sarif report writer %v", err)
+		}
+		err = tw.Write(vr)
+		if err != nil {
+			return fmt.Errorf("error writing sarif report %v", err)
+		}
+	default:
+		b, err := json.MarshalIndent(vr, "", "  ")
+		if err != nil {
+			return fmt.Errorf("could not marshal vulnerability report: %v", err)
+		}
+		fmt.Println(string(b))
 
-	tw, err := NewSarifWriter(os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating sarif report writer %v", err)
-	}
-	err = tw.Write(vr)
-	if err != nil {
-		return fmt.Errorf("error writing sarif report %v", err)
 	}
 	return nil
 }
