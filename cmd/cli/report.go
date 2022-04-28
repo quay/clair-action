@@ -73,14 +73,14 @@ var reportCmd = &cli.Command{
 			EnvVars: []string{"IMAGE_REF"},
 		},
 		&cli.GenericFlag{
-			Name:    "output",
-			Aliases: []string{"o"},
+			Name:    "format",
+			Aliases: []string{"f"},
 			Value: &EnumValue{
 				Enum:    []string{clairFmt, sarifFmt},
 				Default: clairFmt,
 			},
 			Usage:   "what output format the results should be in",
-			EnvVars: []string{"OUTPUT"},
+			EnvVars: []string{"FORMAT"},
 		},
 	},
 }
@@ -93,6 +93,7 @@ func report(c *cli.Context) error {
 		imgRef  = c.String("image-ref")
 		imgPath = c.String("image-path")
 		dbPath  = c.String("db-path")
+		format  = c.String("format")
 	)
 
 	var (
@@ -162,7 +163,7 @@ func report(c *cli.Context) error {
 		return fmt.Errorf("error scanning index report %v", err)
 	}
 
-	switch c.String("output") {
+	switch format {
 	case sarifFmt:
 		tw, err := output.NewSarifWriter(os.Stdout)
 		if err != nil {

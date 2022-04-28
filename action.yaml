@@ -10,14 +10,19 @@ inputs:
     description: 'A path to the image .tar file (generated from the docker save command) to be scanned'
     required: false
     default: ''
-  output:
+  format:
     description: 'In which format to produce the results'
+    required: false
+    default: 'sarif'
+  output:
+    description: 'Where to put the results'
     required: false
     default: 'sarif'
 runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - '--image-ref ${{ inputs.image-ref }}'
-    - '--image-path ${{ inputs.image-path }}'
-    - '--output ${{ inputs.output }}'
+    - '${{ inputs.output }}'
+    - '--image-ref=${{ inputs.image-ref }}'
+    - '--image-path=${{ inputs.image-path }}'
+    - '--format=${{ inputs.format }}'
