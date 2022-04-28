@@ -1,4 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "entered"
+local-clair report --db-path=/matcher $@
+
+exit $returnCode
