@@ -15,7 +15,7 @@ inputs:
     required: false
     default: 'sarif'
 runs:
-  using: 'docker'
+  using: "docker"
   image: "Dockerfile"
   args:
     - '--image-ref ${{ inputs.image-ref }}'
