@@ -57,7 +57,7 @@
             {
               "ruleId": "{{ $vuln_id }}-{{ $package_id }}",
               "ruleIndex": {{ $vuln_id }},
-              "level": "error",
+              "level": "{{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .NormalizedSeverity }}{{ end }}",
               "message": {
                 "text": "{{ with ( index $.Packages $package_id ) }}{{ .Name }}{{ end }} - {{ with ( index $.Packages $package_id ) }}{{ .Version }}{{ end }} - {{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .Name }}{{ end }}"
               },
