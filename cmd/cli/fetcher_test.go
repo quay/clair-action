@@ -42,7 +42,7 @@ func TestFetcher(t *testing.T) {
 
 		err = lf.Realizer(ctx).Realize(ctx, []*claircore.Layer{l})
 		if err != nil {
-			t.Fatalf("error fetching laayer: %v", err)
+			t.Fatalf("error fetching layer: %v", err)
 		}
 	}
 }
