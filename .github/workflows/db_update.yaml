@@ -1,7 +1,13 @@
 name: db_update
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      rebuild-db:
+        description: 'whether or not to rebuild the DB'
+        required: true
+        default: 'true'
+
   # Run every day at 5AM UTC
   schedule:
     - cron: '0 5 * * *'
@@ -30,4 +36,6 @@ jobs:
           push: true
           tags: quay.io/crozzy/clair-sqlite-db:latest
           build-args: |
-            REBUILD_DB=1
+            if [[ ${rebuild-db%-*} == "true" ]]; then
+              REBUILD_DB=1
+            fi
