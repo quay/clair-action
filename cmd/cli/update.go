@@ -7,7 +7,7 @@ import (
 	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/urfave/cli/v2"
 
-	"github.com/crozzy/local-clair/datastore"
+	"github.com/crozzy/clair-action/datastore"
 )
 
 var updateCmd = &cli.Command{

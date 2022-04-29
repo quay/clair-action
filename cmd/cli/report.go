@@ -14,9 +14,9 @@ import (
 	_ "github.com/quay/claircore/matchers/defaults"
 	"github.com/urfave/cli/v2"
 
-	"github.com/crozzy/local-clair/datastore"
-	"github.com/crozzy/local-clair/image"
-	"github.com/crozzy/local-clair/output"
+	"github.com/crozzy/clair-action/datastore"
+	"github.com/crozzy/clair-action/image"
+	"github.com/crozzy/clair-action/output"
 )
 
 type EnumValue struct {

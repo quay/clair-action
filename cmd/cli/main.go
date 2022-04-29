@@ -9,9 +9,9 @@ import (
 
 func main() {
 	app := &cli.App{
-		Name:                 "local-clair",
+		Name:                 "clair-action",
 		Version:              "0.0.1",
-		Usage:                "local-clair --help",
+		Usage:                "clair-action --help",
 		Description:          "A CLI application for running Clair v4 locally",
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{

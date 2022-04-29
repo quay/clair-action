@@ -1,4 +1,4 @@
-module github.com/crozzy/local-clair
+module github.com/crozzy/clair-action
 
 go 1.17
 

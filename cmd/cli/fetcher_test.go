@@ -18,12 +18,12 @@ func TestFetcher(t *testing.T) {
 		{
 			name:      "simple",
 			digest:    "sha256:aaa35f7177b4a8621e5bf2058f04b5fa1105e4965fbd3e0bbc6a63039847caaa",
-			layerPath: "/home/crozzy/.go/src/github.com/crozzy/local-clair/testdata/diff/",
+			layerPath: "testdata/diff/",
 		},
 		{
 			name:      "complex",
 			digest:    "sha256:2d035f7177b4a8621e5bf2058f04b5fa1105e4965fbd3e0bbc6a63039847ccbe",
-			layerPath: "/home/crozzy/.local/share/containers/storage/overlay/7699752e6ed63eef234d2736d4e37159a433e18e06cd617e254299f324f41797/diff/",
+			layerPath: "/home/person/.local/share/containers/storage/overlay/7699752e6ed63eef234d2736d4e37159a433e18e06cd617e254299f324f41797/diff/",
 		},
 	}
 
