@@ -18,11 +18,16 @@ inputs:
     description: 'Where to put the results'
     required: false
     default: 'sarif'
+  return-code:
+    description: 'What code to return if vulnerabilities are found'
+    required: false
+    default: '1'
 runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - '${{ inputs.output }}'
-    - '--image-ref=${{ inputs.image-ref }}'
-    - '--image-path=${{ inputs.image-path }}'
-    - '--format=${{ inputs.format }}'
+    - '-r ${{ inputs.image-ref }}'
+    - '-p ${{ inputs.image-path }}'
+    - '-f ${{ inputs.format }}'
+    - '-o ${{ inputs.output }}'
+    - '-c ${{ inputs.return-code }}'
