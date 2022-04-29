@@ -21,7 +21,7 @@ inputs:
   return-code:
     description: 'What code to return if vulnerabilities are found'
     required: false
-    default: '1'
+    default: '0'
 runs:
   using: "docker"
   image: "Dockerfile"
