@@ -7,7 +7,7 @@ ADD . /build/
 RUN go build -o local-clair ./cmd/cli
 
 # Final image
-FROM quay.io/crozzy/clair-sqlite-db:latest AS final
+FROM registry.access.redhat.com/ubi8/ubi-minimal as final
 RUN microdnf install --disablerepo=* --enablerepo=ubi-8-baseos --enablerepo=ubi-8-appstream sqlite
 ARG REBUILD_DB
 COPY --from=build /build/local-clair /bin/local-clair
