@@ -1,13 +1,7 @@
 name: db_update
 
 on:
-  workflow_dispatch:
-    inputs:
-      rebuild-db:
-        description: 'whether or not to rebuild the DB'
-        required: true
-        default: 'true'
-
+  workflow_dispatch: {}
   # Run every day at 5AM UTC
   schedule:
     - cron: '0 5 * * *'
@@ -33,9 +27,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: db.Dockerfile
-          push: true
+          push: false
           tags: quay.io/crozzy/clair-sqlite-db:latest
-          build-args: |
-            if [[ ${rebuild-db%-*} == "true" ]]; then
-              REBUILD_DB=1
-            fi
+          secrets: |
+            "aws=${{ secrets.AWS_CREDS }}"
