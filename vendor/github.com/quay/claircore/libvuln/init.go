@@ -8,14 +8,14 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/datastore/postgres/migrations"
-	"github.com/quay/claircore/internal/matcher"
 	"github.com/remind101/migrate"
 )
 
 // InitPostgresStore initialize a indexer.Store given libindex.Opts
-func InitPostgresStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (matcher.Store, error) {
+func InitPostgresStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (datastore.MatcherStore, error) {
 	cfg, err := pgx.ParseConfig(pool.Config().ConnConfig.ConnString())
 	if err != nil {
 		return nil, err

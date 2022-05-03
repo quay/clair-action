@@ -32,7 +32,7 @@ type dockerLocalImage struct {
 func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string) (*dockerLocalImage, error) {
 	f, err := os.Open(exportDir)
 	if err != nil {
-		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
+		return nil, fmt.Errorf("unable to open tar: %w", err)
 	}
 
 	di := &dockerLocalImage{}

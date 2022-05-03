@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/quay/claircore/enricher/cvss"
@@ -18,6 +19,8 @@ import (
 	"github.com/crozzy/clair-action/image"
 	"github.com/crozzy/clair-action/output"
 )
+
+var defaultDBPath = filepath.Join(os.TempDir(), "matcher.db")
 
 type EnumValue struct {
 	Enum     []string
@@ -72,6 +75,12 @@ var reportCmd = &cli.Command{
 			Usage:   "the remote location of the image",
 			EnvVars: []string{"IMAGE_REF"},
 		},
+		&cli.StringFlag{
+			Name:    "db-url",
+			Value:   "",
+			Usage:   "the remote location of the sqlite zstd DB",
+			EnvVars: []string{"DB_URL"},
+		},
 		&cli.GenericFlag{
 			Name:    "format",
 			Aliases: []string{"f"},
@@ -93,6 +102,7 @@ func report(c *cli.Context) error {
 		imgRef  = c.String("image-ref")
 		imgPath = c.String("image-path")
 		dbPath  = c.String("db-path")
+		dbURL   = c.String("db-url")
 		format  = c.String("format")
 	)
 
@@ -116,8 +126,17 @@ func report(c *cli.Context) error {
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
 	}
 
-	if dbPath == "" {
-		return fmt.Errorf("no $DB_PATH or --db-path set")
+	switch {
+	case dbPath != "":
+	case dbURL != "":
+		dbPath = defaultDBPath
+		var err error
+		err = datastore.DownloadDB(ctx, dbURL, defaultDBPath)
+		if err != nil {
+			return fmt.Errorf("could not download database: %v", err)
+		}
+	default:
+		return fmt.Errorf("no $DB_PATH / --db-path or $DB_URL / --db-url set")
 	}
 
 	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)

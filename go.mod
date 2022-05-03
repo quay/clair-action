@@ -8,6 +8,7 @@ require (
 	github.com/google/go-containerregistry v0.8.0
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v4 v4.14.1
+	github.com/klauspost/compress v1.15.1
 	github.com/quay/claircore v1.3.2
 	github.com/quay/zlog v1.1.0
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -36,7 +37,6 @@ require (
 	github.com/jackc/pgtype v1.9.1 // indirect
 	github.com/jackc/puddle v1.2.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f // indirect
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936 // indirect
