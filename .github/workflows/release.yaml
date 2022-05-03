@@ -1,0 +1,27 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to push resulting image to'
+        required: true
+
+jobs:
+  build:
+    name: Build and push container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username:  crozzy+ci
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          file: cli.Dockerfile
+          push: true
+          tags: quay.io/crozzy/clair-action:${{github.event.inputs.tag}}
