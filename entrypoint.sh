@@ -22,7 +22,6 @@ while getopts "r:p:f:o:c:" o; do
 done
 
 clair-action report \
-    --db-path=/matcher \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
     --format=${format} > ${output} \
