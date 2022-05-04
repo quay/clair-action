@@ -91,6 +91,13 @@ var reportCmd = &cli.Command{
 			Usage:   "what output format the results should be in",
 			EnvVars: []string{"FORMAT"},
 		},
+		&cli.IntFlag{
+			Name:    "return-code",
+			Aliases: []string{"c"},
+			Value:   0,
+			Usage:   "what status code to return when vulnerabilites are found",
+			EnvVars: []string{"RETURN_CODE"},
+		},
 	},
 }
 
@@ -99,11 +106,12 @@ func report(c *cli.Context) error {
 
 	var (
 		// All arguments
-		imgRef  = c.String("image-ref")
-		imgPath = c.String("image-path")
-		dbPath  = c.String("db-path")
-		dbURL   = c.String("db-url")
-		format  = c.String("format")
+		imgRef     = c.String("image-ref")
+		imgPath    = c.String("image-path")
+		dbPath     = c.String("db-path")
+		dbURL      = c.String("db-url")
+		format     = c.String("format")
+		returnCode = c.Int("return-code")
 	)
 
 	var (
@@ -198,7 +206,10 @@ func report(c *cli.Context) error {
 			return fmt.Errorf("could not marshal vulnerability report: %v", err)
 		}
 		fmt.Println(string(b))
+	}
 
+	if len(vr.Vulnerabilities) > 0 {
+		return cli.Exit("found vulnerabilies", returnCode)
 	}
 	return nil
 }

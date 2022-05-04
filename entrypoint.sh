@@ -25,6 +25,5 @@ clair-action report \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
     --format=${format} > ${output} \
-    --db-url=https://clair-sqlite-db.s3.amazonaws.com/matcher.zst
-
-exit $returnCode
+    --db-url=https://clair-sqlite-db.s3.amazonaws.com/matcher.zst \
+    --return-code=${returnCode}

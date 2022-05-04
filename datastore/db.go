@@ -39,6 +39,9 @@ func DownloadDB(ctx context.Context, dbURL string, dest string) error {
 	if err != nil {
 		return fmt.Errorf("could not read .zst file: %v", err)
 	}
+	// TODO(crozzy): do something with this
+	_ = resp.Header.Get("x-amz-meta-checksum")
+
 	_, err = io.Copy(f, gr)
 	if err != nil {
 		return fmt.Errorf("error copying DB to file: %v", err)
