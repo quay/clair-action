@@ -1,5 +1,7 @@
 ## About
 
+*NOTE* - Currently unstable and liable to change.
+
 GitHub Action to statically analyze container images for vulnerabilities using [Claircore](https://github.com/quay/claircore/).
 
 ___
