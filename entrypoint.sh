@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-while getopts "r:p:f:o:c:" o; do
+while getopts "r:p:f:o:c:d:" o; do
    case "${o}" in
        r)
          export imageRef="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
@@ -18,12 +18,21 @@ while getopts "r:p:f:o:c:" o; do
        c)
          export returnCode="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
        ;;
+       d)
+         export dbURL="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
+       ;;
   esac
 done
 
-clair-action report \
+if [[ -z "$dbURL" ]]; then
+   dbURL="https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
+fi
+
+echo ${imageRef}
+
+echo "clair-action report \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
-    --format=${format} > ${output} \
-    --db-url=https://clair-sqlite-db.s3.amazonaws.com/matcher.zst \
-    --return-code=${returnCode}
+    --db-url=${dbURL} \
+    --return-code=${returnCode} \
+    --format=${format} > ${output}"

@@ -22,6 +22,10 @@ inputs:
     description: 'What code to return if vulnerabilities are found'
     required: false
     default: '0'
+  db-file-url:
+    description: 'URL of the Sqlite3 zstd-compressed vulnerability database'
+    required: false
+    default: 'https://clair-sqlite-db.s3.amazonaws.com/matcher.zst'
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -31,3 +35,4 @@ runs:
     - '-f ${{ inputs.format }}'
     - '-o ${{ inputs.output }}'
     - '-c ${{ inputs.return-code }}'
+    - '-d ${{ inputs.db-file-url }}'
