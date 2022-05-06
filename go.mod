@@ -1,4 +1,4 @@
-module github.com/crozzy/clair-action
+module github.com/quay/clair-action
 
 go 1.17
 

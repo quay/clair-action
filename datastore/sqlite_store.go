@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crozzy/clair-action/migrations"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
+	"github.com/quay/clair-action/migrations"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"

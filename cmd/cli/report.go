@@ -15,9 +15,9 @@ import (
 	_ "github.com/quay/claircore/matchers/defaults"
 	"github.com/urfave/cli/v2"
 
-	"github.com/crozzy/clair-action/datastore"
-	"github.com/crozzy/clair-action/image"
-	"github.com/crozzy/clair-action/output"
+	"github.com/quay/clair-action/datastore"
+	"github.com/quay/clair-action/image"
+	"github.com/quay/clair-action/output"
 )
 
 var defaultDBPath = filepath.Join(os.TempDir(), "matcher.db")

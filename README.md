@@ -45,7 +45,7 @@ jobs:
           docker save -o ${{ github.sha }} a-really/great-app:${{ github.sha }}
 
       - name: Run Clair V4
-        uses: crozzy/clair-action@main
+        uses: quay/clair-action@main
         with:
           image-path: ${{ github.sha }}
           format: sarif
@@ -93,7 +93,7 @@ jobs:
           tags: user/app:latest
       - 
         name: Run Clair V4
-        uses: crozzy/clair-action@main
+        uses: quay/clair-action@main
         with:
           image-ref: user/app:latest
           format: sarif
