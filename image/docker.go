@@ -36,6 +36,7 @@ func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string
 	}
 
 	di := &dockerLocalImage{}
+	m := &imageInfo{}
 
 	tr := tar.NewReader(f)
 	hdr, err := tr.Next()
@@ -60,19 +61,30 @@ func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string
 			layerFile.Close()
 		}
 		if fn == "manifest.json" {
-			m := []*imageInfo{}
+			_m := []*imageInfo{}
 			b, err := io.ReadAll(tr)
 			if err != nil {
 				return nil, err
 			}
-			err = json.Unmarshal(b, &m)
+			err = json.Unmarshal(b, &_m)
 			if err != nil {
 				return nil, err
 			}
-			digest := strings.TrimSuffix(m[0].Config, filepath.Ext(m[0].Config))
+			m = _m[0]
+			digest := strings.TrimSuffix(m.Config, filepath.Ext(m.Config))
 			di.imageDigest = "sha256:" + digest
 		}
 	}
+
+	var sortedPaths []string
+	for _, p := range m.Layers {
+		for _, l := range di.layerPaths {
+			if filepath.Dir(p) == strings.TrimPrefix(filepath.Base(l), "sha256:") {
+				sortedPaths = append(sortedPaths, l)
+			}
+		}
+	}
+	di.layerPaths = sortedPaths
 	return di, nil
 }
 
