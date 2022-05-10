@@ -2,6 +2,7 @@ package zlog
 
 import (
 	"context"
+	"strings"
 
 	"go.opentelemetry.io/otel/baggage"
 )
@@ -12,28 +13,27 @@ import (
 //
 // Any trailing value is silently dropped.
 func ContextWithValues(ctx context.Context, pairs ...string) context.Context {
-	var err error
 	b := baggage.FromContext(ctx)
 	pairs = pairs[:len(pairs)-len(pairs)%2]
-	ms := make([]baggage.Member, 0, len(pairs)/2)
-	for i := 0; i < len(pairs)/2; i = i + 2 {
+	for i := 0; i < len(pairs); i = i + 2 {
 		k, v := pairs[i], pairs[i+1]
+		r := strings.NewReplacer(" ", "%20", `"`, "%22", ",", "%2C", ";", "%3B", `\`, "%5C")
+		v = r.Replace(v)
 		m, err := baggage.NewMember(k, v)
 		if err != nil {
 			Warn(ctx).
 				Err(err).
 				Str("key", k).
+				Str("value", v).
 				Msg("failed to create baggage member")
 			continue
 		}
-		ms = append(ms, m)
-	}
-	b, err = baggage.New(append(b.Members(), ms...)...)
-	if err != nil {
-		Warn(ctx).
-			Err(err).
-			Msg("failed to create baggage")
-		return ctx
+		b, err = b.SetMember(m)
+		if err != nil {
+			Warn(ctx).
+				Err(err).
+				Msg("failed to create baggage")
+		}
 	}
 	return baggage.ContextWithBaggage(ctx, b)
 }

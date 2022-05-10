@@ -10,7 +10,7 @@ require (
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/klauspost/compress v1.15.1
 	github.com/quay/claircore v1.3.2
-	github.com/quay/zlog v1.1.0
+	github.com/quay/zlog v1.1.3
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/urfave/cli/v2 v2.4.0
 	modernc.org/sqlite v1.15.4

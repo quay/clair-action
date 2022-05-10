@@ -38,8 +38,14 @@ func Test(ctx context.Context, t testing.TB) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	m, _ := baggage.NewMember(testNameKey, t.Name())
-	b, _ := baggage.FromContext(ctx).SetMember(m)
+	m, err := baggage.NewMember(testNameKey, t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := baggage.FromContext(ctx).SetMember(m)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return baggage.ContextWithBaggage(ctx, b)
 }
 

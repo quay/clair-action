@@ -208,6 +208,7 @@ github.com/quay/claircore/matchers
 github.com/quay/claircore/matchers/defaults
 github.com/quay/claircore/matchers/registry
 github.com/quay/claircore/oracle
+github.com/quay/claircore/osrelease
 github.com/quay/claircore/photon
 github.com/quay/claircore/pkg/cpe
 github.com/quay/claircore/pkg/jsonerr
@@ -216,6 +217,8 @@ github.com/quay/claircore/pkg/omnimatcher
 github.com/quay/claircore/pkg/ovalutil
 github.com/quay/claircore/pkg/pep440
 github.com/quay/claircore/pkg/poolstats
+github.com/quay/claircore/pkg/rhctag
+github.com/quay/claircore/pkg/tarfs
 github.com/quay/claircore/pkg/tmp
 github.com/quay/claircore/python
 github.com/quay/claircore/pyupio
@@ -225,6 +228,7 @@ github.com/quay/claircore/rhel/contentmanifest
 github.com/quay/claircore/rhel/dockerfile
 github.com/quay/claircore/rhel/pulp
 github.com/quay/claircore/rhel/repo2cpe
+github.com/quay/claircore/rhel/rhcc
 github.com/quay/claircore/rpm
 github.com/quay/claircore/suse
 github.com/quay/claircore/ubuntu
@@ -240,7 +244,7 @@ github.com/quay/claircore/updater/driver/v1
 # github.com/quay/goval-parser v0.8.6
 ## explicit; go 1.13
 github.com/quay/goval-parser/oval
-# github.com/quay/zlog v1.1.0
+# github.com/quay/zlog v1.1.3
 ## explicit; go 1.14
 github.com/quay/zlog
 # github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
