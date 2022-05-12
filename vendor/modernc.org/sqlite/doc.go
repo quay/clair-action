@@ -19,15 +19,16 @@
 //
 //	OS      Arch    SQLite version
 //	------------------------------
-//	darwin	amd64   3.38.2
-//	darwin	arm64   3.38.2
-//	freebsd	amd64   3.38.2
-//	linux	386     3.38.2
-//	linux	amd64   3.38.2
-//	linux	arm     3.38.2
-//	linux	arm64   3.38.2
-//	linux	riscv64 3.38.2
-//	windows	amd64   3.38.2
+//	darwin	amd64   3.38.5
+//	darwin	arm64   3.38.5
+//	freebsd	amd64   3.38.5
+//	linux	386     3.38.5
+//	linux	amd64   3.38.5
+//	linux	arm     3.38.5
+//	linux	arm64   3.38.5
+//	linux	riscv64 3.38.5
+//	windows	amd64   3.38.5
+//	windows	arm64   3.38.5
 //
 // Builders
 //
@@ -36,6 +37,16 @@
 //	https://modern-c.appspot.com/-/builder/?importpath=modernc.org%2fsqlite
 //
 // Changelog
+//
+// 2022-04-24 v1.17.0:
+//
+// Support windows/arm64.
+//
+// 2022-04-04 v1.16.0:
+//
+// Support scalar application defined functions written in Go.
+//
+//  https://www.sqlite.org/appfunc.html
 //
 // 2022-03-13 v1.15.0:
 //

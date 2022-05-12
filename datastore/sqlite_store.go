@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"database/sql"
+	sqldriver "database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,21 +16,46 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	version "github.com/hashicorp/go-version"
 	"github.com/quay/clair-action/migrations"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
 )
 
+type intVersion [10]int32
+
+func (v *intVersion) String() string {
+	var strs []string
+	for _, p := range v {
+		strs = append(strs, fmt.Sprint(p))
+	}
+	return strings.Join(strs, ".")
+}
+
+func (v *intVersion) FromString(str string) error {
+	str = strings.Trim(str, "{}")
+	sl := strings.Split(str, ",")
+	for i := 0; i < len(sl); i++ {
+		p, err := strconv.ParseInt(sl[i], 10, 32)
+		if err != nil {
+			return err
+		}
+		v[i] = int32(p)
+	}
+	return nil
+}
+
 func NewSQLiteMatcherStore(DSN string, doMigration bool) (*sqliteMatcherStore, error) {
+	sqlite.MustRegisterDeterministicScalarFunction("version_in", 2, _sqliteVersionIn)
 	db, err := sql.Open("sqlite", DSN)
 	if err != nil {
 		return nil, err
 	}
+
 	if doMigration {
 		migrator := migrate.NewMigrator(db)
 		migrator.Table = migrations.MigrationTable
@@ -38,6 +64,52 @@ func NewSQLiteMatcherStore(DSN string, doMigration bool) (*sqliteMatcherStore, e
 		}
 	}
 	return &sqliteMatcherStore{conn: db}, nil
+}
+
+// _sqliteVersionIn is registered and used to determine if a package version falls within a version
+// range, the lower bound is considered inclusive and the upper is considered exclusive.
+
+// vulnerable range is expected as a pair of 10 part, comma seperated version representations
+// separated by `__` e.g. "{0,0,0,0,0,0,0,0,0,0}__{3,6,2147483647,0,0,0,0,0,0,0}"
+func _sqliteVersionIn(ctx *sqlite.FunctionContext, args []sqldriver.Value) (sqldriver.Value, error) {
+	if len(args) != 2 {
+		return nil, errors.New("version_in must be passed 2 args")
+	}
+	pkgVer, ok := args[0].(string)
+	if !ok {
+		return nil, errors.New("could not convert package version arg to string")
+	}
+	vulnRange, ok := args[1].(string)
+	if !ok {
+		return nil, errors.New("could not convert vulnerable range arg to string")
+	}
+
+	var lower, upper intVersion
+	ver, err := version.NewVersion(pkgVer)
+	if err != nil {
+		return false, fmt.Errorf("could not create version: %v", err)
+	}
+
+	vers := strings.Split(vulnRange, "__")
+	if len(vers) != 2 {
+		return false, fmt.Errorf("invalid version range %s", vulnRange)
+	}
+	err = lower.FromString(vers[0])
+	if err != nil {
+		return false, fmt.Errorf("could not create lower version: %v", err)
+	}
+	err = upper.FromString(vers[1])
+	if err != nil {
+		return false, fmt.Errorf("could not create upper version: %v", err)
+	}
+	constraints, err := version.NewConstraint(">=" + lower.String() + ", < " + upper.String())
+	if err != nil {
+		return false, fmt.Errorf("could not compare versions: %v", err)
+	}
+	if constraints.Check(ver) {
+		return true, nil
+	}
+	return false, nil
 }
 
 type sqliteMatcherStore struct {
@@ -327,7 +399,6 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 		// queue the select query
 		rows, err := tx.QueryContext(ctx, query)
 		if err != nil {
-			rows.Close()
 			return nil, err
 		}
 		defer rows.Close()
@@ -371,6 +442,7 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 				&v.FixedInVersion,
 				&v.Updater,
 			)
+
 			v.ID = strconv.FormatInt(id, 10)
 			if err != nil {
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
@@ -394,7 +466,6 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
 	}
 	return results, nil
-
 }
 
 func makePlaceholders(startIndex, length int) string {
@@ -492,7 +563,7 @@ func (ms *sqliteMatcherStore) GetUpdateOperations(ctx context.Context, kind driv
 		rows, err := tx.QueryContext(ctx, getUpdaters)
 		switch {
 		case err == nil:
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return out, nil
 		default:
 			return nil, fmt.Errorf("failed to get distinct updates: %w", err)

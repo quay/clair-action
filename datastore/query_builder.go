@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/doug-martin/goqu/v8"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
@@ -74,22 +72,13 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		exps = append(exps, ex)
 		seen[m] = struct{}{}
 	}
+
 	if opts.VersionFiltering {
 		v := &record.Package.NormalizedVersion
-		var lit strings.Builder
-		b := make([]byte, 0, 16)
-		lit.WriteString("'{")
-		for i := 0; i < 10; i++ {
-			if i != 0 {
-				lit.WriteByte(',')
-			}
-			lit.Write(strconv.AppendInt(b, int64(v.V[i]), 10))
-		}
-		lit.WriteString("}'::int[]")
+		var ver intVersion = v.V
 		exps = append(exps, goqu.And(
 			goqu.C("version_kind").Eq(v.Kind),
-			// TODO (crozzy): this won't work
-			goqu.L("vulnerable_range @> "+lit.String()),
+			goqu.L("version_in('"+ver.String()+"', vulnerable_range)"),
 		))
 	}
 

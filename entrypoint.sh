@@ -28,11 +28,9 @@ if [[ -z "$dbURL" ]]; then
    dbURL="https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
 fi
 
-echo ${imageRef}
-
-echo "clair-action report \
+clair-action report \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
     --db-url=${dbURL} \
     --return-code=${returnCode} \
-    --format=${format} > ${output}"
+    --format=${format} > ${output}
