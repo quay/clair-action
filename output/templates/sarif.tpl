@@ -46,6 +46,7 @@
         }
       },
       "results": [
+      {{ $i := 0 }}
       {{- $t_first := true }}
         {{- range $package_id, $vulnerability_list := .PackageVulnerabilities -}}
           {{- range $vuln_id := $vulnerability_list -}}
@@ -56,7 +57,7 @@
             {{- end }}
             {
               "ruleId": "{{ $vuln_id }}-{{ $package_id }}",
-              "ruleIndex": "{{ $vuln_id }}",
+              "ruleIndex": {{ $i }},
               "level": "warning",
               "message": {
                 "text": "{{ with ( index $.Packages $package_id ) }}{{ .Name }}{{ end }} - {{ with ( index $.Packages $package_id ) }}{{ .Version }}{{ end }} - {{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .Name }}{{ end }}"
@@ -74,6 +75,7 @@
                 }
               }]
             }
+            {{ $i = inc $i }}
           {{- end }}
         {{- end }}
       ],

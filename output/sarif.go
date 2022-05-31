@@ -32,6 +32,9 @@ func NewTemplateWriter(output io.Writer, outputTemplate string) (*TemplateWriter
 	templateFuncMap["escapeString"] = func(input string) string {
 		return strings.ReplaceAll(html.EscapeString(input), "\\", "\\\\")
 	}
+	templateFuncMap["inc"] = func(i int) int {
+		return i + 1
+	}
 	tmpl, err := template.New("output template").Funcs(templateFuncMap).Parse(outputTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template: %w", err)
