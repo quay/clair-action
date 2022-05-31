@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	sqldriver "database/sql/driver"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -412,10 +413,10 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 				Repo:    &claircore.Repository{},
 			}
 
-			var id int64
 			var issued string
+			var hashBin string
 			err := rows.Scan(
-				&id,
+				&hashBin,
 				&v.Name,
 				&v.Description,
 				&issued,
@@ -442,11 +443,12 @@ func (ms *sqliteMatcherStore) Get(ctx context.Context, records []*claircore.Inde
 				&v.FixedInVersion,
 				&v.Updater,
 			)
-
-			v.ID = strconv.FormatInt(id, 10)
 			if err != nil {
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
 			}
+
+			v.ID = base64.StdEncoding.EncodeToString([]byte(hashBin))
+
 			v.Issued, err = time.Parse(time.RFC3339, issued)
 			if err != nil {
 				return nil, fmt.Errorf("failed parse issued date: %v", err)

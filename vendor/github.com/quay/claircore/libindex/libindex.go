@@ -55,6 +55,8 @@ type Libindex struct {
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
 	fa Arena
+	// vscnrs is a convenience object for holding a list of versioned scanners
+	vscnrs indexer.VersionedScanners
 }
 
 // New creates a new instance of libindex.
@@ -95,7 +97,6 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			rhcc.NewEcosystem(ctx),
 		}
 	}
-	opts.LayerFetchOpt = DefaultLayerFetchOpt
 
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
@@ -131,7 +132,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	}
 
 	zlog.Info(ctx).Msg("registered configured scanners")
-	l.Options.vscnrs = vscnrs
+	l.vscnrs = vscnrs
 	return l, nil
 }
 

@@ -3,12 +3,16 @@ package postgres
 import (
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -32,7 +36,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "updateenrichments_duration_seconds",
-			Help:      "The duration of all queries issued in the UpdateEnrichments method",
+			Help:      "Duration of all queries issued in the UpdateEnrichments method.",
 		},
 		[]string{"query"},
 	)
@@ -43,16 +47,16 @@ var (
 			Name:      "getenrichments_total",
 			Help:      "Total number of database queries issued in the get method.",
 		},
-		[]string{"query"},
+		[]string{"query", "success"},
 	)
 	getEnrichmentsDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "getenrichments_duration_seconds",
-			Help:      "The duration of all queries issued in the get method",
+			Help:      "Duration of all queries issued in the get method.",
 		},
-		[]string{"query"},
+		[]string{"query", "success"},
 	)
 )
 
@@ -103,13 +107,7 @@ ON CONFLICT
 DO
 	NOTHING;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/UpdateEnrichments")
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
 
 	var id uint64
 	var ref uuid.UUID
@@ -122,6 +120,12 @@ DO
 
 	updateEnrichmentsCounter.WithLabelValues("create").Add(1)
 	updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
 
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
@@ -168,7 +172,7 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 	return "md5", h.Sum(nil)
 }
 
-func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) ([]driver.EnrichmentRecord, error) {
+func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) (res []driver.EnrichmentRecord, err error) {
 	const query = `
 WITH
 	latest
@@ -191,30 +195,38 @@ WHERE
 	AND uo.enrich = e.id
 	AND e.tags && $2::text[];`
 
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/GetEnrichment")
-	tx, err := s.pool.Begin(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil)))
+	}))
+	defer timer.ObserveDuration()
+	defer func() {
+		getEnrichmentsCounter.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil))).Inc()
+	}()
+	var (
+		c    *pgxpool.Conn
+		rows pgx.Rows
+	)
+	c, err = s.pool.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
-
-	results := make([]driver.EnrichmentRecord, 0, 8) // Guess at capacity.
-	rows, err := s.pool.Query(ctx, query, name, tags)
+	defer c.Release()
+	res = make([]driver.EnrichmentRecord, 0, 8) // Guess at capacity.
+	rows, err = c.Query(ctx, query, name, tags)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	i := 0
 	for rows.Next() {
-		results = append(results, driver.EnrichmentRecord{})
-		r := &results[i]
-		if err := rows.Scan(&r.Tags, &r.Enrichment); err != nil {
+		i := len(res)
+		res = append(res, driver.EnrichmentRecord{})
+		r := &res[i]
+		err = rows.Scan(&r.Tags, &r.Enrichment)
+		if err != nil {
 			return nil, err
 		}
-		i++
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return results, nil
+	err = rows.Err()
+	return res, err
 }

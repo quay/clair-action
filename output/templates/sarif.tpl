@@ -56,7 +56,7 @@
             {{- end }}
             {
               "ruleId": "{{ $vuln_id }}-{{ $package_id }}",
-              "ruleIndex": {{ $vuln_id }},
+              "ruleIndex": "{{ $vuln_id }}",
               "level": "warning",
               "message": {
                 "text": "{{ with ( index $.Packages $package_id ) }}{{ .Name }}{{ end }} - {{ with ( index $.Packages $package_id ) }}{{ .Version }}{{ end }} - {{ with ( index $.Vulnerabilities $vuln_id ) }}{{ .Name }}{{ end }}"

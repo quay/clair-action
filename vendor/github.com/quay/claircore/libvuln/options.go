@@ -16,7 +16,12 @@ const (
 )
 
 type Options struct {
-	Store  datastore.MatcherStore
+	// Store is the interface used to persist and retrieve vulnerabilites
+	// for of matching.
+	Store datastore.MatcherStore
+	// Locker provides system-wide locks for the updater subsystem. If the
+	// matching work is distributed the lock should be backed by a distributed
+	// store.
 	Locker LockSource
 	// An interval on which Libvuln will check for new security database
 	// updates.

@@ -1,7 +1,10 @@
 package datastore
 
 import (
+	"bytes"
 	"context"
+	"crypto/md5"
+	"encoding/base64"
 	"sync"
 
 	"github.com/quay/claircore"
@@ -90,7 +93,8 @@ func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.P
 			p.Source = &claircore.Package{}
 		}
 
-		p.ID = uuid.New().String()
+		_, hashBin := md5Package(p)
+		p.ID = base64.StdEncoding.EncodeToString([]byte(hashBin))
 		m.ls.pkgMap[l.Hash.String()] = append(m.ls.pkgMap[l.Hash.String()], p)
 	}
 	return nil
@@ -154,4 +158,30 @@ func (m *LocalIndexerStore) SetIndexReport(_ context.Context, _ *claircore.Index
 // SetLayerScanned implements base method.
 func (m *LocalIndexerStore) SetLayerScanned(_ context.Context, _ claircore.Digest, _ indexer.VersionedScanner) error {
 	return nil
+}
+
+func md5Package(p *claircore.Package) (string, []byte) {
+	var b bytes.Buffer
+	b.WriteString(p.Name)
+	b.WriteString(p.Version)
+	b.WriteString(p.Kind)
+	b.WriteString(p.PackageDB)
+	b.WriteString(p.RepositoryHint)
+	b.WriteString(p.NormalizedVersion.String())
+	b.WriteString(p.Module)
+	b.WriteString(p.Arch)
+	b.WriteString(p.CPE.String())
+	if p.Source != nil {
+		b.WriteString(p.Source.Name)
+		b.WriteString(p.Source.Version)
+		b.WriteString(p.Source.Kind)
+		b.WriteString(p.Source.PackageDB)
+		b.WriteString(p.Source.RepositoryHint)
+		b.WriteString(p.Source.NormalizedVersion.String())
+		b.WriteString(p.Source.Module)
+		b.WriteString(p.Source.Arch)
+		b.WriteString(p.Source.CPE.String())
+	}
+	s := md5.Sum(b.Bytes())
+	return "md5", s[:]
 }

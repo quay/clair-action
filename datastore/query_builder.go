@@ -83,7 +83,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	}
 
 	query := psql.Select(
-		"id",
+		"hash",
 		"name",
 		"description",
 		"issued",
