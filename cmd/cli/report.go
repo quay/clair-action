@@ -209,7 +209,8 @@ func report(c *cli.Context) error {
 	}
 
 	if len(vr.Vulnerabilities) > 0 {
-		return cli.Exit("found vulnerabilies", returnCode)
+		os.Exit(returnCode)
+		return nil
 	}
 	return nil
 }
