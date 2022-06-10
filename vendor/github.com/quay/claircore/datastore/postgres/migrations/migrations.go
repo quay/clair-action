@@ -72,4 +72,12 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 6,
 		Up: runFile("matcher/06-delete-debian-update_operation.sql"),
 	},
+	{
+		ID: 7,
+		Up: runFile("matcher/07-force-alpine-update.sql"),
+	},
+	{
+		ID: 8,
+		Up: runFile("matcher/08-updater-status.sql"),
+	},
 }

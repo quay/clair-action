@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -77,4 +78,14 @@ func (s *MatcherStore) DeleteUpdateOperations(ctx context.Context, id ...uuid.UU
 		return 0, fmt.Errorf("failed to delete: %w", err)
 	}
 	return tag.RowsAffected(), nil
+}
+
+// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+func (s *MatcherStore) RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
+	return recordUpdaterStatus(ctx, s.pool, updaterName, updateTime, fingerprint, updaterError)
+}
+
+// RecordUpdaterSetStatus records that all updaters from a updater set are up to date with vulnerabilities at this time
+func (s *MatcherStore) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
+	return recordUpdaterSetStatus(ctx, s.pool, updaterSet, updateTime)
 }
