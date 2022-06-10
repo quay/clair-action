@@ -626,13 +626,13 @@ func (ms *sqliteMatcherStore) GetUpdateOperations(ctx context.Context, kind driv
 
 // GetLatestUpdateRefs reports the latest update reference for every known
 // updater.
-func (ms *sqliteMatcherStore) GetLatestUpdateRefs(_ context.Context, _ driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
+func (ms *sqliteMatcherStore) GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // GetLatestUpdateRef reports the latest update reference of any known
 // updater.
-func (ms *sqliteMatcherStore) GetLatestUpdateRef(_ context.Context, _ driver.UpdateKind) (uuid.UUID, error) {
+func (ms *sqliteMatcherStore) GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -643,7 +643,7 @@ func (ms *sqliteMatcherStore) GetLatestUpdateRef(_ context.Context, _ driver.Upd
 //
 //	diff prev cur
 //
-func (ms *sqliteMatcherStore) GetUpdateDiff(ctx context.Context, prev uuid.UUID, cur uuid.UUID) (*driver.UpdateDiff, error) {
+func (ms *sqliteMatcherStore) GetUpdateDiff(context.Context, uuid.UUID, uuid.UUID) (*driver.UpdateDiff, error) {
 	return nil, nil
 }
 
@@ -653,7 +653,7 @@ func (ms *sqliteMatcherStore) GetUpdateDiff(ctx context.Context, prev uuid.UUID,
 // with the UpdateOperation.
 //
 // The number of UpdateOperations deleted is returned.
-func (ms *sqliteMatcherStore) DeleteUpdateOperations(_ context.Context, _ ...uuid.UUID) (int64, error) {
+func (ms *sqliteMatcherStore) DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error) {
 	return 0, nil
 }
 
@@ -664,6 +664,16 @@ func (ms *sqliteMatcherStore) DeleteUpdateOperations(_ context.Context, _ ...uui
 //
 // The returned int64 value indicates the remaining number of update operations needing GC.
 // Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-func (ms *sqliteMatcherStore) GC(ctx context.Context, keep int) (int64, error) {
+func (ms *sqliteMatcherStore) GC(context.Context, int) (int64, error) {
 	return 0, nil
+}
+
+// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+func (ms *sqliteMatcherStore) RecordUpdaterStatus(context.Context, string, time.Time, driver.Fingerprint, error) error {
+	return nil
+}
+
+// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+func (ms *sqliteMatcherStore) RecordUpdaterSetStatus(context.Context, string, time.Time) error {
+	return nil
 }
