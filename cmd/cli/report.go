@@ -98,6 +98,12 @@ var reportCmd = &cli.Command{
 			Usage:   "what status code to return when vulnerabilites are found",
 			EnvVars: []string{"RETURN_CODE"},
 		},
+		&cli.StringFlag{
+			Name:    "docker-config-dir",
+			Value:   "",
+			Usage:   "Docker config dir for the  image registry where --image-ref is stored",
+			EnvVars: []string{"DOCKER_CONFIG_DIR"},
+		},
 	},
 }
 
@@ -106,12 +112,13 @@ func report(c *cli.Context) error {
 
 	var (
 		// All arguments
-		imgRef     = c.String("image-ref")
-		imgPath    = c.String("image-path")
-		dbPath     = c.String("db-path")
-		dbURL      = c.String("db-url")
-		format     = c.String("format")
-		returnCode = c.Int("return-code")
+		imgRef          = c.String("image-ref")
+		imgPath         = c.String("image-path")
+		dbPath          = c.String("db-path")
+		dbURL           = c.String("db-url")
+		format          = c.String("format")
+		returnCode      = c.Int("return-code")
+		dockerConfigDir = c.String("docker-config-dir")
 	)
 
 	var (
@@ -119,6 +126,14 @@ func report(c *cli.Context) error {
 		fa  libindex.Arena
 	)
 	switch {
+	case imgRef != "":
+		cl := http.DefaultClient
+		fa = libindex.NewRemoteFetchArena(cl, os.TempDir())
+		err := os.Setenv("DOCKER_CONFIG", dockerConfigDir)
+		if err != nil {
+			return fmt.Errorf("error setting DOCKER_CONFIG env var")
+		}
+		img = image.NewDockerRemoteImage(ctx, imgRef)
 	case imgPath != "":
 		fa = &LocalFetchArena{}
 		var err error
@@ -126,10 +141,6 @@ func report(c *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("error getting image information %v", err)
 		}
-	case imgRef != "":
-		cl := http.DefaultClient
-		fa = libindex.NewRemoteFetchArena(cl, os.TempDir())
-		img = image.NewDockerRemoteImage(ctx, imgRef)
 	default:
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
 	}
