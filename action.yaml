@@ -17,7 +17,7 @@ inputs:
   output:
     description: 'Where to put the results'
     required: false
-    default: 'sarif'
+    default: ''
   return-code:
     description: 'What code to return if vulnerabilities are found'
     required: false
@@ -26,6 +26,11 @@ inputs:
     description: 'URL of the Sqlite3 zstd-compressed vulnerability database'
     required: false
     default: 'https://clair-sqlite-db.s3.amazonaws.com/matcher.zst'
+  docker-config-dir:
+    description: 'Path to the docker config dir for the image registry where image-ref is stored'
+    required: false
+    default: ''
+
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -36,3 +41,4 @@ runs:
     - '-o ${{ inputs.output }}'
     - '-c ${{ inputs.return-code }}'
     - '-d ${{ inputs.db-file-url }}'
+    - '-u ${{ inputs.docker-config-dir }}'

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-while getopts "r:p:f:o:c:d:" o; do
+while getopts "r:p:f:o:c:d:u:w:" o; do
    case "${o}" in
        r)
          export imageRef="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
@@ -21,6 +21,9 @@ while getopts "r:p:f:o:c:d:" o; do
        d)
          export dbURL="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
        ;;
+       u)
+         export dockerConfigDir="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
+       ;;
   esac
 done
 
@@ -31,6 +34,7 @@ fi
 clair-action report \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
+    --docker-config-dir=${GITHUB_WORKSPACE}/${dockerConfigDir} \
     --db-url=${dbURL} \
     --return-code=${returnCode} \
     --format=${format} > ${output}
