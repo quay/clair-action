@@ -31,6 +31,11 @@ if [[ -z "$dbURL" ]]; then
    dbURL="https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
 fi
 
+echo ${HOME}
+ls -l ${HOME}
+echo ${GITHUB_WORKSPACE}
+ls -l ${GITHUB_WORKSPACE}
+
 clair-action report \
     --image-path=${GITHUB_WORKSPACE}/${imagePath} \
     --image-ref=${imageRef} \
