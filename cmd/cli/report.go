@@ -49,6 +49,7 @@ func (e EnumValue) String() string {
 const (
 	clairFmt = "clair"
 	sarifFmt = "sarif"
+	quayFmt  = "quay"
 )
 
 var reportCmd = &cli.Command{
@@ -85,7 +86,7 @@ var reportCmd = &cli.Command{
 			Name:    "format",
 			Aliases: []string{"f"},
 			Value: &EnumValue{
-				Enum:    []string{clairFmt, sarifFmt},
+				Enum:    []string{clairFmt, sarifFmt, quayFmt},
 				Default: clairFmt,
 			},
 			Usage:   "what output format the results should be in",
@@ -211,6 +212,16 @@ func report(c *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("error writing sarif report %v", err)
 		}
+	case quayFmt:
+		quayReport, err := output.ReportToSecScan(vr)
+		if err != nil {
+			return fmt.Errorf("error creating quay format report %v", err)
+		}
+		b, err := json.MarshalIndent(quayReport, "", "  ")
+		if err != nil {
+			return fmt.Errorf("could not marshal quay report: %v", err)
+		}
+		fmt.Println(string(b))
 	default:
 		b, err := json.MarshalIndent(vr, "", "  ")
 		if err != nil {
