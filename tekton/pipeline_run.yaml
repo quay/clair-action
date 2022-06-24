@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: clair-pipeline-run
+spec:
+  pipelineRef:
+    name: image-vulnerabilities
+  workspaces: 
+  - name: source
+    persistentVolumeClaim:
+      claimName: vuln-store
