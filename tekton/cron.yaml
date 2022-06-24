@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: update-db
+spec:
+  schedule: "20 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: get-data
+            image: quay.io/projectquay/clair-action:v0.0.2
+            command:
+            - /bin/sh
+            - -c
+            - microdnf install wget zstd && wget -q https://clair-sqlite-db.s3.amazonaws.com/matcher.zst && zstd -o /tmp/matcher.db -d matcher.zst
+            volumeMounts:
+            - name: vuln-store
+              mountPath: /tmp
+          restartPolicy: Never
+          volumes:
+          - name: vuln-store
+            persistentVolumeClaim:
+              claimName: vuln-store
