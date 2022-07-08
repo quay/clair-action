@@ -1,6 +1,0 @@
-vendor
-*.swp
-book
-cctool
-!cctool/
-**/testdata/pg*
