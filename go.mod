@@ -82,7 +82,3 @@ require (
 	modernc.org/strutil v1.1.1 // indirect
 	modernc.org/token v1.0.0 // indirect
 )
-
-replace github.com/quay/claircore/updater/driver => ../claircore/updater/driver
-
-replace github.com/quay/claircore/toolkit => ../claircore/toolkit
