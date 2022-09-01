@@ -39,53 +39,62 @@ func NewLocalIndexerStore() *LocalIndexerStore {
 }
 
 // DistributionsByLayer implements base method.
-func (m *LocalIndexerStore) DistributionsByLayer(_ context.Context, d claircore.Digest, _ indexer.VersionedScanners) ([]*claircore.Distribution, error) {
+func (m *LocalIndexerStore) DistributionsByLayer(_ context.Context, d claircore.Digest, vss indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ls.lock.RLock()
 	defer m.ls.lock.RUnlock()
-	distros := m.ls.distroMap[d.String()]
+	distros := make([]*claircore.Distribution, 0)
+	for _, vs := range vss {
+		distros = append(distros, m.ls.distroMap[d.String()+vs.Name()]...)
+	}
 	return distros, nil
 }
 
 // RepositoriesByLayer implements base method.
-func (m *LocalIndexerStore) RepositoriesByLayer(_ context.Context, d claircore.Digest, _ indexer.VersionedScanners) ([]*claircore.Repository, error) {
+func (m *LocalIndexerStore) RepositoriesByLayer(_ context.Context, d claircore.Digest, vss indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	m.ls.lock.RLock()
 	defer m.ls.lock.RUnlock()
-	repos := m.ls.repoMap[d.String()]
+	repos := make([]*claircore.Repository, 0)
+	for _, vs := range vss {
+		repos = append(repos, m.ls.repoMap[d.String()+vs.Name()]...)
+	}
 	return repos, nil
 }
 
 // PackagesByLayer implements base method.
-func (m *LocalIndexerStore) PackagesByLayer(_ context.Context, d claircore.Digest, _ indexer.VersionedScanners) ([]*claircore.Package, error) {
+func (m *LocalIndexerStore) PackagesByLayer(_ context.Context, d claircore.Digest, vss indexer.VersionedScanners) ([]*claircore.Package, error) {
 	m.ls.lock.RLock()
 	defer m.ls.lock.RUnlock()
-	pkgs := m.ls.pkgMap[d.String()]
+	pkgs := make([]*claircore.Package, 0)
+	for _, vs := range vss {
+		pkgs = append(pkgs, m.ls.pkgMap[d.String()+vs.Name()]...)
+	}
 	return pkgs, nil
 }
 
 // IndexDistributions implements base method.
-func (m *LocalIndexerStore) IndexDistributions(_ context.Context, distros []*claircore.Distribution, l *claircore.Layer, _ indexer.VersionedScanner) error {
+func (m *LocalIndexerStore) IndexDistributions(_ context.Context, distros []*claircore.Distribution, l *claircore.Layer, vs indexer.VersionedScanner) error {
 	m.ls.lock.Lock()
 	defer m.ls.lock.Unlock()
 	for _, d := range distros {
 		d.ID = uuid.New().String()
-		m.ls.distroMap[l.Hash.String()] = append(m.ls.distroMap[l.Hash.String()], d)
+		m.ls.distroMap[l.Hash.String()+vs.Name()] = append(m.ls.distroMap[l.Hash.String()+vs.Name()], d)
 	}
 	return nil
 }
 
 // IndexRepositories implements base method.
-func (m *LocalIndexerStore) IndexRepositories(_ context.Context, repos []*claircore.Repository, l *claircore.Layer, _ indexer.VersionedScanner) error {
+func (m *LocalIndexerStore) IndexRepositories(_ context.Context, repos []*claircore.Repository, l *claircore.Layer, vs indexer.VersionedScanner) error {
 	m.ls.lock.Lock()
 	defer m.ls.lock.Unlock()
 	for _, r := range repos {
 		r.ID = uuid.New().String()
-		m.ls.repoMap[l.Hash.String()] = append(m.ls.repoMap[l.Hash.String()], r)
+		m.ls.repoMap[l.Hash.String()+vs.Name()] = append(m.ls.repoMap[l.Hash.String()+vs.Name()], r)
 	}
 	return nil
 }
 
 // IndexPackages implements base method.
-func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.Package, l *claircore.Layer, _ indexer.VersionedScanner) error {
+func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.Package, l *claircore.Layer, vs indexer.VersionedScanner) error {
 	m.ls.lock.Lock()
 	defer m.ls.lock.Unlock()
 	for _, p := range pkgs {
@@ -95,7 +104,7 @@ func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.P
 
 		_, hashBin := md5Package(p)
 		p.ID = base64.StdEncoding.EncodeToString([]byte(hashBin))
-		m.ls.pkgMap[l.Hash.String()] = append(m.ls.pkgMap[l.Hash.String()], p)
+		m.ls.pkgMap[l.Hash.String()+vs.Name()] = append(m.ls.pkgMap[l.Hash.String()+vs.Name()], p)
 	}
 	return nil
 }
