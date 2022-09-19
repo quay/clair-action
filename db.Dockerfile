@@ -8,7 +8,7 @@ RUN go build -o clair-action ./cmd/cli
 
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal as final
-RUN microdnf install --disablerepo=* --enablerepo=ubi-8-baseos --enablerepo=ubi-8-appstream sqlite unzip zstd
+RUN microdnf install --disablerepo=* --enablerepo=ubi-8-baseos-rpms --enablerepo=ubi-8-appstream-rpms sqlite unzip zstd
 ARG REBUILD_DB
 COPY --from=build /build/clair-action /bin/clair-action
 RUN DB_PATH=/matcher /bin/clair-action update
