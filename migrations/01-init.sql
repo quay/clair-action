@@ -1,16 +1,3 @@
--- update_operation
-CREATE TABLE IF NOT EXISTS update_operation (
-	id			INTEGER PRIMARY KEY,
-	ref         TEXT UNIQUE,
-	updater		TEXT NOT NULL,
-	fingerprint TEXT,
-	date		DATETIME DEFAULT CURRENT_TIMESTAMP,
-	kind 		TEXT DEFAULT "vulnerability"
-);
-
-CREATE INDEX IF NOT EXISTS uo_lookup_updater ON update_operation (updater);
-CREATE INDEX IF NOT EXISTS uo_lookup_kind ON update_operation (kind);
-
 -- vuln
 CREATE TABLE IF NOT EXISTS vuln (
 	id                     INTEGER PRIMARY KEY,
@@ -55,16 +42,6 @@ CREATE INDEX vuln_lookup_idx on vuln (package_name, dist_id,
                                          repo_uri);
 CREATE INDEX vuln_lookup_updater ON vuln (updater);
 
--- uo_vuln                            
-CREATE TABLE IF NOT EXISTS uo_vuln (
-	uo   INTEGER REFERENCES update_operation (id) ON DELETE CASCADE,
-	vuln INTEGER REFERENCES vuln             (id) ON DELETE CASCADE,
-	PRIMARY KEY (uo, vuln)
-);
-
-CREATE INDEX uovuln_lookup_vuln ON uo_vuln (vuln);
-CREATE INDEX uovuln_lookup_uo ON uo_vuln (uo);
-
 -- enrichment
 CREATE TABLE enrichment (
     id        INTEGER PRIMARY KEY,
@@ -75,12 +52,3 @@ CREATE TABLE enrichment (
     data      BLOB
 );
 CREATE UNIQUE INDEX enrichment_lookup_hash_kind_hash ON enrichment (hash_kind, hash);
-
--- uo_enrich
-CREATE TABLE IF NOT EXISTS uo_enrich (
-    uo          INTEGER REFERENCES update_operation (id) ON DELETE CASCADE,
-    enrich      INTEGER REFERENCES enrichment (id) ON DELETE CASCADE,
-    updater     TEXT,
-    fingerprint TEXT,
-    date        DATETIME DEFAULT CURRENT_TIMESTAMP
-);
