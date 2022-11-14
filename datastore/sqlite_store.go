@@ -122,14 +122,6 @@ type sqliteMatcherStore struct {
 // queries by clients.
 func (ms *sqliteMatcherStore) UpdateEnrichments(ctx context.Context, updaterName string, fp driver.Fingerprint, es []driver.EnrichmentRecord) (uuid.UUID, error) {
 	const (
-		create = `
-	INSERT
-	INTO
-		update_operation (updater, fingerprint, ref, kind)
-	VALUES
-		($1, $2, $3, 'enrichment')
-	RETURNING
-		id;`
 		insert = `
 	INSERT
 	INTO
@@ -140,42 +132,14 @@ func (ms *sqliteMatcherStore) UpdateEnrichments(ctx context.Context, updaterName
 		(hash_kind, hash)
 	DO
 		NOTHING;`
-		assoc = `
-	INSERT
-	INTO
-		uo_enrich (enrich, updater, uo, date)
-	VALUES
-		(
-			(
-				SELECT
-					id
-				FROM
-					enrichment
-				WHERE
-					hash_kind = $1
-					AND hash = $2
-					AND updater = $3
-			),
-			$3,
-			$4,
-			strftime('%s','now')
-		)
-	ON CONFLICT
-	DO
-		NOTHING;`
 	)
 
 	var ref = uuid.New()
-	var id int64
 	tx, err := ms.conn.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return uuid.Nil, err
 	}
 	defer tx.Rollback()
-
-	if err := tx.QueryRowContext(ctx, create, updaterName, string(fp), ref.String()).Scan(&id); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
-	}
 
 	for i := range es {
 		hashKind, hash := hashEnrichment(&es[i])
@@ -184,9 +148,6 @@ func (ms *sqliteMatcherStore) UpdateEnrichments(ctx context.Context, updaterName
 		)
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("failed to insert enrichment: %w", err)
-		}
-		if _, err := tx.ExecContext(ctx, assoc, hashKind, hash, updaterName, id); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert association: %w", err)
 		}
 	}
 
@@ -213,8 +174,6 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 // not queried by clients.
 func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updaterName string, fp driver.Fingerprint, vs []*claircore.Vulnerability) (uuid.UUID, error) {
 	const (
-		// Create makes a new update operation and returns the reference and ID.
-		create = `INSERT INTO update_operation (updater, fingerprint, ref, kind) VALUES ($1, $2, $3, 'vulnerability') RETURNING id;`
 		// Insert attempts to create a new vulnerability. It fails silently.
 		insert = `
 		INSERT INTO vuln (
@@ -233,25 +192,14 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 		  $26, $27, $28, $29
 		)
 		ON CONFLICT (hash_kind, hash) DO NOTHING;`
-		// Assoc associates an update operation and a vulnerability. It fails
-		// silently.
-		assoc = `
-		INSERT INTO uo_vuln (uo, vuln) VALUES (
-			$3,
-			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
-		ON CONFLICT DO NOTHING;`
 	)
 
 	var ref = uuid.New()
-	var id int64
 	tx, err := ms.conn.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return uuid.Nil, err
 	}
 	defer tx.Rollback()
-	if err := tx.QueryRowContext(ctx, create, updaterName, string(fp), ref.String()).Scan(&id); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
-	}
 
 	for _, vuln := range vs {
 		if vuln.Package == nil || vuln.Package.Name == "" {
@@ -279,10 +227,6 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"),
 		); err != nil {
 			return uuid.Nil, fmt.Errorf("failed to insert vulnerability: %w", err)
-		}
-
-		if _, err := tx.ExecContext(ctx, assoc, hashKind, hash, id); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert association: %w", err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -480,27 +424,13 @@ func makePlaceholders(startIndex, length int) string {
 
 func (ms *sqliteMatcherStore) GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error) {
 	var query = `
-	WITH
-		latest
-			AS (
-				SELECT
-					max(id) AS id
-				FROM
-					update_operation
-				WHERE
-					updater = $1
-			)
 	SELECT
 		e.tags, e.data
 	FROM
 		enrichment AS e,
-		uo_enrich AS uo,
-		latest,
 		json_each(e.tags)
 	WHERE
-		uo.uo = latest.id
-		AND uo.enrich = e.id
-		AND json_each.value IN ` + makePlaceholders(2, len(tags)) + ";"
+		json_each.value IN ` + makePlaceholders(2, len(tags)) + ";"
 
 	tx, err := ms.conn.BeginTx(ctx, nil)
 	if err != nil {
@@ -544,84 +474,7 @@ func (ms *sqliteMatcherStore) GetEnrichment(ctx context.Context, kind string, ta
 //
 // If no updaters are specified, all UpdateOperations are returned.
 func (ms *sqliteMatcherStore) GetUpdateOperations(ctx context.Context, kind driver.UpdateKind, updaters ...string) (map[string][]driver.UpdateOperation, error) {
-	const (
-		query              = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater IN($1) ORDER BY id DESC;`
-		queryVulnerability = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater IN($1) AND kind = 'vulnerability' ORDER BY id DESC;`
-		queryEnrichment    = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater IN($1) AND kind = 'enrichment' ORDER BY id DESC;`
-		getUpdaters        = `SELECT DISTINCT(updater) FROM update_operation;`
-	)
-
-	tx, err := ms.conn.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-	out := make(map[string][]driver.UpdateOperation)
-
-	// Get distinct updaters from database if nothing specified.
-	if len(updaters) == 0 {
-		updaters = []string{}
-
-		rows, err := tx.QueryContext(ctx, getUpdaters)
-		switch {
-		case err == nil:
-		case errors.Is(err, sql.ErrNoRows):
-			return out, nil
-		default:
-			return nil, fmt.Errorf("failed to get distinct updates: %w", err)
-		}
-
-		defer rows.Close() // OK to defer and call, as per docs.
-
-		for rows.Next() {
-			var u string
-			err := rows.Scan(&u)
-			if err != nil {
-				return nil, fmt.Errorf("failed to scan updater: %w", err)
-			}
-			updaters = append(updaters, u)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		rows.Close()
-	}
-
-	var q string
-	switch kind {
-	case "":
-		q = query
-	case driver.EnrichmentKind:
-		q = queryEnrichment
-	case driver.VulnerabilityKind:
-		q = queryVulnerability
-	}
-
-	rows, err := tx.QueryContext(ctx, q, strings.Join(updaters, ","))
-	switch {
-	case err == nil:
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("failed to get distinct updates: %w", err)
-	}
-
-	for rows.Next() {
-		var uo driver.UpdateOperation
-		err := rows.Scan(
-			&uo.Ref,
-			&uo.Updater,
-			&uo.Fingerprint,
-			&uo.Date,
-		)
-		if err != nil {
-			rows.Close()
-			return nil, fmt.Errorf("failed to scan update operation for updater %q: %w", uo.Updater, err)
-		}
-		out[uo.Updater] = append(out[uo.Updater], uo)
-	}
-	return out, nil
-
+	return nil, nil
 }
 
 // GetLatestUpdateRefs reports the latest update reference for every known
