@@ -25,17 +25,17 @@ jobs:
         with:
           file: cli.Dockerfile
           push: true
-          tags: quay.io/projectquay/clair-action:$(basename "${GITHUB_REF}")
+          tags: quay.io/projectquay/clair-action:${{ github.ref_name }}
       - name: Update Dockerfile
         shell: bash
         run: |
-          sed -i 's/clair-action:v.*/clair-action:$(basename "${GITHUB_REF}")/' Dockerfile
+          sed -i 's/clair-action:v.*/clair-action:${{ github.ref_name }}/' Dockerfile
       - name: Create PR to update version
         uses: peter-evans/create-pull-request@v4.1.4
         with:
-          title: "$(basename ${GITHUB_REF}) Dockerfile update"
+          title: "${{ github.ref_name }} Dockerfile update"
           body: "This is an automated changelog commit."
-          commit-message: "chore: $(basename ${GITHUB_REF}) Dockerfile update"
-          branch: "update-$(basename ${GITHUB_REF})"
+          commit-message: "chore: ${{ github.ref_name }} Dockerfile update"
+          branch: "update-${{ github.ref_name }}"
           signoff: true
           delete-branch: true
