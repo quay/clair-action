@@ -172,7 +172,7 @@ Following inputs can be used as `step.with` keys
 
 ## Releases
 
-Before tagging make sure to update the [Dockerfile](Dockerfile), this must happen for the action to use the correct container. The container is pre-built to keep latency as low as possible, pushing a tag should trigger that container build that is subsequently pushed to [Quay.io](quay.io/projectquay/clair-action).
+Before tagging make sure to update the [Dockerfile](Dockerfile), this must happen for the action to use the correct container. The container is pre-built to keep latency as low as possible, pushing a tag should trigger that container build that is subsequently pushed to [Quay.io](https://quay.io/projectquay/clair-action).
 
 ```sh
 # Update Dockerfile with new $TAG
