@@ -13,6 +13,7 @@ ___
   - [Image ref with auth](#image-ref-with-auth)
 - [Customizing](#customizing)
   - [inputs](#inputs)
+- [Releases](#releases)
 
 ## Usage
 
@@ -168,3 +169,14 @@ Following inputs can be used as `step.with` keys
 
 
 \* either `image-ref` or `image-path` need to be defined.
+
+## Releases
+
+Before tagging make sure to update [Dockerfile](Dockerfile), this must happen for the action to use the correct container. The container is pre-built to keep latency as low as possible, pushing a tag should trigger that container build that is subsequently pushed to quay.io/projectquay/clair-action.
+
+```sh
+# Update Dockerfile with new $TAG
+git tag -as $TAG HEAD
+git push upstream $TAG
+gh workflow view release --web # if you're partial to that kind of thing
+```
