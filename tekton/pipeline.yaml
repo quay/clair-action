@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: image-vulnerabilities
+spec:
+  workspaces:
+    - name: source
+      description: |
+        This workspace is shared among all the pipeline tasks to read/write common resources
+  tasks:
+    - name: vulnerability-report
+      workspaces:
+        - name: source
+          workspace: source
+      taskSpec:
+        workspaces: 
+          - name: source 
+            description: shared vuln data
+        steps:
+          - name: run-report
+            image: quay.io/projectquay/clair-action:v0.0.2
+            script: |
+              #!/bin/sh
+              clair-action report --image-ref=debian:bullseye --db-path=$(workspaces.source.path)/matcher.db --format=quay
