@@ -30,6 +30,14 @@ inputs:
     description: 'Path to the docker config dir for the image registry where image-ref is stored'
     required: false
     default: ''
+  mode:
+    description: 'Whether you want a report or to update the vulnerability database, choose report or update'
+    required: false
+    default: 'report'
+  db-file:
+    description: 'Vulnerability database file created for mode `update` or DB file used for `report` mode'
+    required: false
+    default: ''
 
 runs:
   using: "docker"
@@ -42,3 +50,5 @@ runs:
     - '-c ${{ inputs.return-code }}'
     - '-d ${{ inputs.db-file-url }}'
     - '-u ${{ inputs.docker-config-dir }}'
+    - '-w ${{ inputs.mode }}'
+    - '-b ${{ inputs.db-file }}'
