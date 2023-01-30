@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	_ "github.com/quay/claircore/matchers/defaults"
+	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/urfave/cli/v2"
 
 	"github.com/quay/clair-action/datastore"
@@ -140,7 +142,7 @@ func report(c *cli.Context) error {
 		var err error
 		img, err = image.NewDockerLocalImage(ctx, imgPath, os.TempDir())
 		if err != nil {
-			return fmt.Errorf("error getting image information %v", err)
+			return fmt.Errorf("error getting image information: %v", err)
 		}
 	default:
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
@@ -180,7 +182,7 @@ func report(c *cli.Context) error {
 
 	mf, err := img.GetManifest(ctx)
 	if err != nil {
-		return fmt.Errorf("error creating manifest %v", err)
+		return fmt.Errorf("error creating manifest: %v", err)
 	}
 
 	indexerOpts := &libindex.Options{
@@ -190,32 +192,38 @@ func report(c *cli.Context) error {
 	}
 	li, err := libindex.New(ctx, indexerOpts, http.DefaultClient)
 	if err != nil {
-		return fmt.Errorf("error creating Libindex %v", err)
+		return fmt.Errorf("error creating Libindex: %v", err)
 	}
 	ir, err := li.Index(ctx, mf)
-	if err != nil {
-		return fmt.Errorf("error creating index report %v", err)
+	// TODO (crozzy) Better error handling once claircore
+	// error overhaul is merged.
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, tarfs.ErrFormat):
+		return fmt.Errorf("error creating index report due to invalid layer: %v", err)
+	default:
+		return fmt.Errorf("error creating index report: %v", err)
 	}
 
 	vr, err := lv.Scan(ctx, ir)
 	if err != nil {
-		return fmt.Errorf("error scanning index report %v", err)
+		return fmt.Errorf("error creating vulnerability report: %v", err)
 	}
 
 	switch format {
 	case sarifFmt:
 		tw, err := output.NewSarifWriter(os.Stdout)
 		if err != nil {
-			return fmt.Errorf("error creating sarif report writer %v", err)
+			return fmt.Errorf("error creating sarif report writer: %v", err)
 		}
 		err = tw.Write(vr)
 		if err != nil {
-			return fmt.Errorf("error writing sarif report %v", err)
+			return fmt.Errorf("error writing sarif report: %v", err)
 		}
 	case quayFmt:
 		quayReport, err := output.ReportToSecScan(vr)
 		if err != nil {
-			return fmt.Errorf("error creating quay format report %v", err)
+			return fmt.Errorf("error creating quay format report: %v", err)
 		}
 		b, err := json.MarshalIndent(quayReport, "", "  ")
 		if err != nil {
