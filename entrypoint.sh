@@ -33,10 +33,6 @@ while getopts "r:p:f:o:c:d:u:w:b:" o; do
   esac
 done
 
-if [[ -z "$dbURL" ]]; then
-   dbURL="https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
-fi
-
 if [[ ${mode} = "update" ]]
 then
   clair-action update --db-path=${dbPath}
