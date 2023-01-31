@@ -10,7 +10,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:                 "clair-action",
-		Version:              "0.0.1",
+		Version:              Version,
 		Usage:                "clair-action --help",
 		Description:          "A CLI application for running Clair v4 locally",
 		EnableBashCompletion: true,
