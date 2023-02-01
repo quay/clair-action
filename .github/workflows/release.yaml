@@ -27,7 +27,7 @@ jobs:
           push: true
           tags: quay.io/projectquay/clair-action:${{ github.ref_name }}
           build-args: |
-            CLAIR_ACTION_VERSION: ${{ github.ref_name }}
+            CLAIR_ACTION_VERSION=${{ github.ref_name }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
