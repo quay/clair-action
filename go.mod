@@ -1,6 +1,6 @@
 module github.com/quay/clair-action
 
-go 1.17
+go 1.20
 
 require (
 	github.com/doug-martin/goqu/v8 v8.6.0
