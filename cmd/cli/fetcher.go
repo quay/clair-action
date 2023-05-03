@@ -5,12 +5,11 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/libindex"
 )
 
 var (
-	_ libindex.Arena   = (*LocalFetchArena)(nil)
-	_ indexer.Realizer = (*realizer)(nil)
+	_ indexer.FetchArena = (*LocalFetchArena)(nil)
+	_ indexer.Realizer   = (*realizer)(nil)
 )
 
 type LocalFetchArena struct{}

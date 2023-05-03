@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/quay/claircore/enricher/cvss"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
@@ -126,7 +127,7 @@ func report(c *cli.Context) error {
 
 	var (
 		img image.Image
-		fa  libindex.Arena
+		fa  indexer.FetchArena
 	)
 	switch {
 	case imgRef != "":
