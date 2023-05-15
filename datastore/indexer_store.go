@@ -17,6 +17,7 @@ type localStore struct {
 	pkgMap    map[string][]*claircore.Package
 	distroMap map[string][]*claircore.Distribution
 	repoMap   map[string][]*claircore.Repository
+	fileMap   map[string][]claircore.File
 	lock      *sync.RWMutex
 }
 
@@ -34,6 +35,7 @@ func NewLocalIndexerStore() *LocalIndexerStore {
 			pkgMap:    make(map[string][]*claircore.Package),
 			distroMap: make(map[string][]*claircore.Distribution),
 			repoMap:   make(map[string][]*claircore.Repository),
+			fileMap:   make(map[string][]claircore.File),
 		},
 	}
 }
@@ -71,6 +73,17 @@ func (m *LocalIndexerStore) PackagesByLayer(_ context.Context, d claircore.Diges
 	return pkgs, nil
 }
 
+// FilesByLayer implements base method.
+func (m *LocalIndexerStore) FilesByLayer(_ context.Context, d claircore.Digest, vss indexer.VersionedScanners) ([]claircore.File, error) {
+	m.ls.lock.RLock()
+	defer m.ls.lock.RUnlock()
+	files := make([]claircore.File, 0)
+	for _, vs := range vss {
+		files = append(files, m.ls.fileMap[d.String()+vs.Name()]...)
+	}
+	return files, nil
+}
+
 // IndexDistributions implements base method.
 func (m *LocalIndexerStore) IndexDistributions(_ context.Context, distros []*claircore.Distribution, l *claircore.Layer, vs indexer.VersionedScanner) error {
 	m.ls.lock.Lock()
@@ -105,6 +118,16 @@ func (m *LocalIndexerStore) IndexPackages(_ context.Context, pkgs []*claircore.P
 		_, hashBin := md5Package(p)
 		p.ID = base64.StdEncoding.EncodeToString([]byte(hashBin))
 		m.ls.pkgMap[l.Hash.String()+vs.Name()] = append(m.ls.pkgMap[l.Hash.String()+vs.Name()], p)
+	}
+	return nil
+}
+
+// IndexFiles implements base method.
+func (m *LocalIndexerStore) IndexFiles(ctx context.Context, files []claircore.File, l *claircore.Layer, vs indexer.VersionedScanner) error {
+	m.ls.lock.Lock()
+	defer m.ls.lock.Unlock()
+	for _, f := range files {
+		m.ls.fileMap[l.Hash.String()+vs.Name()] = append(m.ls.fileMap[l.Hash.String()+vs.Name()], f)
 	}
 	return nil
 }
