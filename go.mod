@@ -13,7 +13,7 @@ require (
 	github.com/quay/zlog v1.1.7
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.31.0
-	github.com/urfave/cli/v2 v2.25.7
+	github.com/urfave/cli/v2 v2.27.0
 	modernc.org/sqlite v1.27.0
 )
 
