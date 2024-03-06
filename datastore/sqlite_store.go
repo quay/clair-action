@@ -222,7 +222,7 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 			hashKind, hash,
 			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued.Format(time.RFC3339), vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
-			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
+			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, &dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"),
 		); err != nil {
@@ -495,7 +495,6 @@ func (ms *sqliteMatcherStore) GetLatestUpdateRef(context.Context, driver.UpdateK
 // In diff(1) terms, this is like
 //
 //	diff prev cur
-//
 func (ms *sqliteMatcherStore) GetUpdateDiff(context.Context, uuid.UUID, uuid.UUID) (*driver.UpdateDiff, error) {
 	return nil, nil
 }
@@ -529,4 +528,9 @@ func (ms *sqliteMatcherStore) RecordUpdaterStatus(context.Context, string, time.
 // RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
 func (ms *sqliteMatcherStore) RecordUpdaterSetStatus(context.Context, string, time.Time) error {
 	return nil
+}
+
+// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+func (ms *sqliteMatcherStore) DeltaUpdateVulnerabilities(context.Context, string, driver.Fingerprint, []*claircore.Vulnerability, []string) (uuid.UUID, error) {
+	panic("not implemented") // TODO: Implement when VEX updater is merged
 }
