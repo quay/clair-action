@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/quay/claircore/libvuln"
 	_ "github.com/quay/claircore/updater/defaults"
@@ -12,7 +14,7 @@ import (
 
 var updateCmd = &cli.Command{
 	Name:    "update",
-	Aliases: []string{"r"},
+	Aliases: []string{"u"},
 	Usage:   "update the database",
 	Action:  update,
 	Flags: []cli.Flag{
@@ -33,7 +35,12 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("error creating sqlite backend: %v", err)
 	}
 
+	cl := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	matcherOpts := &libvuln.Options{
+		Client:                   cl,
 		Store:                    matcherStore,
 		Locker:                   NewLocalLockSource(),
 		DisableBackgroundUpdates: true,
