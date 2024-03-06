@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/indexer"
@@ -166,8 +167,12 @@ func report(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("error creating sqlite backend: %v", err)
 	}
+	cl := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 
 	matcherOpts := &libvuln.Options{
+		Client:                   cl,
 		Store:                    matcherStore,
 		Locker:                   NewLocalLockSource(),
 		DisableBackgroundUpdates: true,
