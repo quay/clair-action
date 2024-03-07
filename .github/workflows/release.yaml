@@ -43,3 +43,13 @@ jobs:
         run: |
           sed -i 's/clair-action:v.*/clair-action:${{ github.ref_name }}/' Dockerfile
           git diff --exit-code
+  release:
+    name: Release
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        id: create_release
+        with:
+          name: ${{ github.ref_name }} Release
+          tag: ${{ github.ref_name }}
