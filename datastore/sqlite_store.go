@@ -169,6 +169,36 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 	return "md5", h.Sum(nil)
 }
 
+func getMetadata(ctx context.Context, tx *sql.Tx, kind string, val string) (int64, error) {
+	var metadataID int64
+	s := md5.Sum([]byte(val))
+	const (
+		get = `
+		SELECT id FROM metadata
+		WHERE kind = $1
+		AND hash_kind = $2
+		AND hash = $3`
+		insert = `
+		INSERT INTO metadata (
+			kind, hash_kind, hash, value
+		) VALUES (
+			$1, $2, $3, $4
+		)
+		ON CONFLICT (kind, hash_kind, hash) DO NOTHING
+		RETURNING id;`
+	)
+	err := tx.QueryRowContext(ctx, get, kind, "md5", s[:], val).Scan(&metadataID)
+	switch {
+	case err == sql.ErrNoRows:
+		if err := tx.QueryRowContext(ctx, insert, kind, "md5", s[:], val).Scan(&metadataID); err != nil {
+			return 0, fmt.Errorf("failed to scan description: %v", err)
+		}
+	case err != nil:
+		return 0, err
+	}
+	return metadataID, nil
+}
+
 // UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
 // vulnerabilities, and ensures vulnerabilities from previous updates are
 // not queried by clients.
@@ -178,11 +208,11 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 		insert = `
 		INSERT INTO vuln (
 			hash_kind, hash,
-			name, updater, description, issued, links, severity, normalized_severity,
+			updater, issued, links, severity, normalized_severity,
 			package_name, package_version, package_module, package_arch, package_kind,
 			dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
 			repo_name, repo_key, repo_uri,
-			fixed_in_version, arch_operation, version_kind, vulnerable_range
+			fixed_in_version, arch_operation, version_kind, vulnerable_range, description_id, name_id
 		) VALUES (
 		  $1, $2,
 		  $3, $4, $5, $6, $7, $8, $9,
@@ -202,6 +232,15 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 	defer tx.Rollback()
 
 	for _, vuln := range vs {
+		// Get or save description
+		descID, err := getMetadata(ctx, tx, "description", vuln.Description)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get description: %w", err)
+		}
+		nameID, err := getMetadata(ctx, tx, "name", vuln.Name)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get name: %w", err)
+		}
 		if vuln.Package == nil || vuln.Package.Name == "" {
 			continue
 		}
@@ -220,11 +259,11 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 
 		if _, err := tx.ExecContext(ctx, insert,
 			hashKind, hash,
-			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued.Format(time.RFC3339), vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
+			vuln.Updater, vuln.Issued.Format(time.RFC3339), vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, &dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
-			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"),
+			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"), descID, nameID,
 		); err != nil {
 			return uuid.Nil, fmt.Errorf("failed to insert vulnerability: %w", err)
 		}
