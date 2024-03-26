@@ -32,4 +32,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 1,
 		Up: runFile("01-init.sql"),
 	},
+	{
+		ID: 2,
+		Up: runFile("02-add-metadata.sql"),
+	},
 }

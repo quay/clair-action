@@ -83,9 +83,9 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	}
 
 	query := psql.Select(
-		"hash",
-		"name",
-		"description",
+		"vuln.hash",
+		"name.value",
+		"desc.value",
 		"issued",
 		"links",
 		"severity",
@@ -109,7 +109,10 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		"repo_uri",
 		"fixed_in_version",
 		"updater",
-	).From("vuln").Where(exps...)
+	).From("vuln").
+		Join(goqu.I("metadata").As("desc"), goqu.On(goqu.Ex{"vuln.description_id": goqu.I("desc.id")})).
+		Join(goqu.I("metadata").As("name"), goqu.On(goqu.Ex{"vuln.name_id": goqu.I("name.id")})).
+		Where(exps...)
 
 	sql, _, err := query.ToSQL()
 	if err != nil {
