@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.20
+ARG GO_VERSION=1.21
 
 # Build the app
 FROM quay.io/projectquay/golang:${GO_VERSION} AS build
