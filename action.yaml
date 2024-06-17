@@ -25,7 +25,7 @@ inputs:
   db-file-url:
     description: 'URL of the Sqlite3 zstd-compressed vulnerability database'
     required: false
-    default: 'https://clair-sqlite-db.s3.amazonaws.com/matcher.zst'
+    default: ''
   docker-config-dir:
     description: 'Path to the docker config dir for the image registry where image-ref is stored'
     required: false

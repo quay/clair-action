@@ -11,6 +11,9 @@ ___
   - [Image path](#image-path)
   - [Image ref](#image-ref)
   - [Image ref with auth](#image-ref-with-auth)
+  - [Generating vulnerability DB and using it for report creation](#generating-vulnerability-db-and-using-it-for-report-creation)
+    - [Generate the vulnerability DB example:](#generate-the-vulnerability-db-example)
+    - [Using generated database:](#using-generated-database)
 - [Customizing](#customizing)
   - [inputs](#inputs)
 - [Releases](#releases)
@@ -151,6 +154,96 @@ jobs:
           sarif_file: clair_results.sarif
 ```
 
+### Generating vulnerability DB and using it for report creation
+
+As the vulnerability database isn't hosted anywhere, it is the responsibility of the user to generate it.
+`Clair-action` surfaces an update mode to allow users to do this.
+
+#### Generate the vulnerability DB example:
+
+```yaml
+name: db_update
+
+on:
+  workflow_dispatch: {}
+  # Run every day at 5AM UTC
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Run Clair V4 update
+        uses: quay/clair-action@main
+        with:
+          db-file: matcher.db
+          mode: update
+
+      - name: Cache DB
+        uses: actions/cache@v3
+        with:
+          path: matcher.db
+          key: matcher.db
+```
+
+#### Using generated database:
+
+```yaml
+name: ci
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+jobs:
+  docker-build:
+    name: "Docker Build"
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Grab cache DB
+        uses: actions/cache@v3
+        with:
+          path: matcher.db
+          key: matcher.db
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t crozzy/great-app:${{ github.sha }} .
+      - name: Save Docker image
+        run: |
+          docker save -o ${{ github.sha }} crozzy/great-app:${{ github.sha }}
+      - name: Run Clair V4
+        uses: quay/clair-action@main
+        with:
+          image-path: ${{ github.sha }}
+          db-file: matcher.db  # Use DB from cache
+          format: sarif
+          output: clair_results.sarif
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sarif
+          path: clair_results.sarif
+      - name: Upload sarif
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: clair_results.sarif
+```
+
 ## Customizing
 
 ### inputs
@@ -164,9 +257,10 @@ Following inputs can be used as `step.with` keys
 | `format`            | String | no       | `clair`          | The output format of the report, currently `clair`, `sarif` and `quay` are supported.                                                                                                      |
 | `output`            | String | yes      | -                | The file path where the report gets saved (e.g., /tmp/my-image-report.sarif)                                                                                                               |
 | `return-code`       | String | no       | `0`              | A code to return from the process if Clair found vulnerabilities. (e.g., `1`)                                                                                                              |
+| `mode`              | String | no       | report           | Specify which mode to run the action in, supported values are `report` and `update`. `report` reports vulnerabilities for an image, `update` update generates the sqlite3 vulnerability DB.                                        |
+| `db-file`           | String | no       | empty string     | Optional param to specify where on the filesystem the zstd compressed sqlite3 DB lives.                                                                                                    |
 | `db-file-url`       | String | no       | liable to change | Optional param to specify your own url where the zstd compressed sqlite3 DB lives.                                                                                                         |
 | `docker-config-dir` | String | no       | -                | Optional param to specify the docker (or other) config dir to allow for pulling of layers from private images                                                                              |
-
 
 \* either `image-ref` or `image-path` need to be defined.
 

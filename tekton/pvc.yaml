@@ -1,7 +1,6 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  namespace: default
   name: vuln-store
 spec:
   accessModes:

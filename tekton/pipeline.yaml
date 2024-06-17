@@ -18,7 +18,7 @@ spec:
             description: shared vuln data
         steps:
           - name: run-report
-            image: quay.io/projectquay/clair-action:v0.0.2
+            image: quay.io/projectquay/clair-action:v0.0.8
             script: |
               #!/bin/sh
               clair-action report --image-ref=debian:bullseye --db-path=$(workspaces.source.path)/matcher.db --format=quay
