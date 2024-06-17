@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/quay/claircore/libvuln"
 	_ "github.com/quay/claircore/updater/defaults"
@@ -35,9 +34,7 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("error creating sqlite backend: %v", err)
 	}
 
-	cl := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	cl := &http.Client{}
 
 	matcherOpts := &libvuln.Options{
 		Client:                   cl,
