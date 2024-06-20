@@ -197,22 +197,14 @@ func md5Package(p *claircore.Package) (string, []byte) {
 	b.WriteString(p.Name)
 	b.WriteString(p.Version)
 	b.WriteString(p.Kind)
-	b.WriteString(p.PackageDB)
-	b.WriteString(p.RepositoryHint)
-	b.WriteString(p.NormalizedVersion.String())
 	b.WriteString(p.Module)
 	b.WriteString(p.Arch)
-	b.WriteString(p.CPE.String())
 	if p.Source != nil {
 		b.WriteString(p.Source.Name)
 		b.WriteString(p.Source.Version)
 		b.WriteString(p.Source.Kind)
-		b.WriteString(p.Source.PackageDB)
-		b.WriteString(p.Source.RepositoryHint)
-		b.WriteString(p.Source.NormalizedVersion.String())
 		b.WriteString(p.Source.Module)
 		b.WriteString(p.Source.Arch)
-		b.WriteString(p.Source.CPE.String())
 	}
 	s := md5.Sum(b.Bytes())
 	return "md5", s[:]
