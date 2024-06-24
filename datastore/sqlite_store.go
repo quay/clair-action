@@ -199,10 +199,25 @@ func getMetadata(ctx context.Context, tx *sql.Tx, kind string, val string) (int6
 	return metadataID, nil
 }
 
-// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-// vulnerabilities, and ensures vulnerabilities from previous updates are
-// not queried by clients.
-func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updaterName string, fp driver.Fingerprint, vs []*claircore.Vulnerability) (uuid.UUID, error) {
+// UpdateVulnerabilities inserts the provided vulnerabilities from the iterator it.
+func (ms *sqliteMatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.VulnerabilityIter) (uuid.UUID, error) {
+	return ms.updateVulnerabilities(ctx, updater, fp, it)
+}
+
+// UpdateVulnerabilities inserts the provided vulnerabilities from the slice vulns.
+func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fp driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
+	iterVulns := func(yield func(*claircore.Vulnerability, error) bool) {
+		for i := range vulns {
+			if !yield(vulns[i], nil) {
+				break
+			}
+		}
+	}
+	return ms.updateVulnerabilities(ctx, updater, fp, iterVulns)
+
+}
+
+func (ms *sqliteMatcherStore) updateVulnerabilities(ctx context.Context, updaterName string, fp driver.Fingerprint, vulnIter datastore.VulnerabilityIter) (uuid.UUID, error) {
 	const (
 		// Insert attempts to create a new vulnerability. It fails silently.
 		insert = `
@@ -231,18 +246,25 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 	}
 	defer tx.Rollback()
 
-	for _, vuln := range vs {
-		// Get or save description
-		descID, err := getMetadata(ctx, tx, "description", vuln.Description)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get description: %w", err)
+	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
+		if iterErr != nil {
+			err = iterErr
+			return false
 		}
-		nameID, err := getMetadata(ctx, tx, "name", vuln.Name)
+		// Get or save description
+		var descID, nameID int64
+		descID, err = getMetadata(ctx, tx, "description", vuln.Description)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get name: %w", err)
+			err = fmt.Errorf("failed to get description: %w", err)
+			return false
+		}
+		nameID, err = getMetadata(ctx, tx, "name", vuln.Name)
+		if err != nil {
+			err = fmt.Errorf("failed to get name: %w", err)
+			return false
 		}
 		if vuln.Package == nil || vuln.Package.Name == "" {
-			continue
+			return true
 		}
 
 		pkg := vuln.Package
@@ -257,7 +279,7 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 		hashKind, hash := md5Vuln(vuln)
 		vKind, vrLower, vrUpper := rangefmt(vuln.Range)
 
-		if _, err := tx.ExecContext(ctx, insert,
+		if _, err = tx.ExecContext(ctx, insert,
 			hashKind, hash,
 			vuln.Updater, vuln.Issued.Format(time.RFC3339), vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
@@ -265,9 +287,15 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"), descID, nameID,
 		); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert vulnerability: %w", err)
+			err = fmt.Errorf("failed to insert vulnerability: %w", err)
+			return false
 		}
+		return true
+	})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("iterating on vulnerabilities: %w", err)
 	}
+
 	if err := tx.Commit(); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -506,55 +534,32 @@ func (ms *sqliteMatcherStore) GetEnrichment(ctx context.Context, kind string, ta
 	return results, nil
 }
 
-// GetUpdateOperations returns a list of UpdateOperations in date descending
-// order for the given updaters.
-//
-// The returned map is keyed by Updater implementation's unique names.
-//
-// If no updaters are specified, all UpdateOperations are returned.
+// GetUpdateOperations is a noop, update operations are not currently used in this implementation.
 func (ms *sqliteMatcherStore) GetUpdateOperations(ctx context.Context, kind driver.UpdateKind, updaters ...string) (map[string][]driver.UpdateOperation, error) {
 	return nil, nil
 }
 
-// GetLatestUpdateRefs reports the latest update reference for every known
-// updater.
+// GetLatestUpdateRefs is not implemented, update operations are not currently used in this implementation.
 func (ms *sqliteMatcherStore) GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
-// GetLatestUpdateRef reports the latest update reference of any known
-// updater.
+// GetLatestUpdateRefs is not implemented, update operations are not currently used in this implementation.
 func (ms *sqliteMatcherStore) GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error) {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
-// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-// Operations.
-//
-// In diff(1) terms, this is like
-//
-//	diff prev cur
+// GetLatestUpdateRefs is a noop, there aren't multiple update operations to compare.
 func (ms *sqliteMatcherStore) GetUpdateDiff(context.Context, uuid.UUID, uuid.UUID) (*driver.UpdateDiff, error) {
 	return nil, nil
 }
 
-// GC stuff
-// DeleteUpdateOperations removes an UpdateOperation.
-// A call to GC must be run after this to garbage collect vulnerabilities associated
-// with the UpdateOperation.
-//
-// The number of UpdateOperations deleted is returned.
+// DeleteUpdateOperations is a noop, update operations are not currently used in this implementation.
 func (ms *sqliteMatcherStore) DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error) {
 	return 0, nil
 }
 
-// GC will delete any update operations for an updater which exceeds the provided keep
-// value.
-//
-// Implementations may throttle the GC process for datastore efficiency reasons.
-//
-// The returned int64 value indicates the remaining number of update operations needing GC.
-// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+// GC is a noop.
 func (ms *sqliteMatcherStore) GC(context.Context, int) (int64, error) {
 	return 0, nil
 }
@@ -569,7 +574,12 @@ func (ms *sqliteMatcherStore) RecordUpdaterSetStatus(context.Context, string, ti
 	return nil
 }
 
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-func (ms *sqliteMatcherStore) DeltaUpdateVulnerabilities(context.Context, string, driver.Fingerprint, []*claircore.Vulnerability, []string) (uuid.UUID, error) {
-	panic("not implemented") // TODO: Implement when VEX updater is merged
+// DeltaUpdateVulnerabilities in this implementation just calls sqliteMatcherStore.UpdateVulnerabilities as delta updating is not
+// possible or desired in this implementation.
+func (ms *sqliteMatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fp driver.Fingerprint, vulns []*claircore.Vulnerability, del []string) (uuid.UUID, error) {
+	return ms.UpdateVulnerabilities(ctx, updater, fp, vulns)
+}
+
+func (ms *sqliteMatcherStore) UpdateEnrichmentsIter(context.Context, string, driver.Fingerprint, datastore.EnrichmentIter) (uuid.UUID, error) {
+	return uuid.New(), nil
 }
