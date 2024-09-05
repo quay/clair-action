@@ -36,7 +36,7 @@ func update(c *cli.Context) error {
 	}
 
 	cl := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 2 * time.Minute,
 	}
 
 	matcherOpts := &libvuln.Options{
