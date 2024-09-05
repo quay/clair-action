@@ -27,6 +27,9 @@ import (
 	"modernc.org/sqlite"
 )
 
+// compile check datastore.MatcherStore implementation
+var _ datastore.MatcherStore = &sqliteMatcherStore{}
+
 type intVersion [10]int32
 
 func (v *intVersion) String() string {
@@ -121,6 +124,20 @@ type sqliteMatcherStore struct {
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
 // queries by clients.
 func (ms *sqliteMatcherStore) UpdateEnrichments(ctx context.Context, updaterName string, fp driver.Fingerprint, es []driver.EnrichmentRecord) (uuid.UUID, error) {
+	esIter := func(yield func(*driver.EnrichmentRecord, error) bool) {
+		for i := range es {
+			if !yield(&es[i], nil) {
+				break
+			}
+		}
+	}
+
+	return ms.UpdateEnrichmentsIter(ctx, updaterName, fp, esIter)
+}
+
+// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
+// accepting an iterator function.
+func (ms *sqliteMatcherStore) UpdateEnrichmentsIter(ctx context.Context, updaterName string, _ driver.Fingerprint, enIter datastore.EnrichmentIter) (uuid.UUID, error) {
 	const (
 		insert = `
 	INSERT
@@ -141,14 +158,26 @@ func (ms *sqliteMatcherStore) UpdateEnrichments(ctx context.Context, updaterName
 	}
 	defer tx.Rollback()
 
-	for i := range es {
-		hashKind, hash := hashEnrichment(&es[i])
-		_, err := tx.ExecContext(ctx, insert,
-			hashKind, hash, updaterName, strings.Join(es[i].Tags, ","), es[i].Enrichment,
+	enIter(func(es *driver.EnrichmentRecord, iterErr error) bool {
+		if iterErr != nil {
+			err = fmt.Errorf("iterating on enrichments: %w", iterErr)
+			return false
+		}
+
+		hashKind, hash := hashEnrichment(es)
+		_, err = tx.ExecContext(ctx, insert,
+			hashKind, hash, updaterName, strings.Join(es.Tags, ","), es.Enrichment,
 		)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert enrichment: %w", err)
+			err = fmt.Errorf("failed to insert enrichment: %w", err)
+			return false
 		}
+
+		return true
+	})
+
+	if err != nil {
+		return uuid.Nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -203,6 +232,20 @@ func getMetadata(ctx context.Context, tx *sql.Tx, kind string, val string) (int6
 // vulnerabilities, and ensures vulnerabilities from previous updates are
 // not queried by clients.
 func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updaterName string, fp driver.Fingerprint, vs []*claircore.Vulnerability) (uuid.UUID, error) {
+	vsIter := func(yield func(*claircore.Vulnerability, error) bool) {
+		for i := range vs {
+			if !yield(vs[i], nil) {
+				break
+			}
+		}
+	}
+
+	return ms.UpdateVulnerabilitiesIter(ctx, updaterName, fp, vsIter)
+}
+
+// UpdateVulnerabilitiesIter performs the same operation as
+// UpdateVulnerabilities, but accepting an iterator function.
+func (ms *sqliteMatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, _ string, _ driver.Fingerprint, vnIter datastore.VulnerabilityIter) (uuid.UUID, error) {
 	const (
 		// Insert attempts to create a new vulnerability. It fails silently.
 		insert = `
@@ -231,18 +274,27 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 	}
 	defer tx.Rollback()
 
-	for _, vuln := range vs {
-		// Get or save description
-		descID, err := getMetadata(ctx, tx, "description", vuln.Description)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get description: %w", err)
+	vnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
+		if iterErr != nil {
+			err = fmt.Errorf("iterating on vulnerabilities: %w", iterErr)
+			return false
 		}
-		nameID, err := getMetadata(ctx, tx, "name", vuln.Name)
+
+		// Get or save description
+		var descID int64
+		descID, err = getMetadata(ctx, tx, "description", vuln.Description)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get name: %w", err)
+			err = fmt.Errorf("failed to get description: %w", err)
+			return false
+		}
+		var nameID int64
+		nameID, err = getMetadata(ctx, tx, "name", vuln.Name)
+		if err != nil {
+			err = fmt.Errorf("failed to get name: %w", err)
+			return false
 		}
 		if vuln.Package == nil || vuln.Package.Name == "" {
-			continue
+			return true
 		}
 
 		pkg := vuln.Package
@@ -257,7 +309,7 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 		hashKind, hash := md5Vuln(vuln)
 		vKind, vrLower, vrUpper := rangefmt(vuln.Range)
 
-		if _, err := tx.ExecContext(ctx, insert,
+		if _, err = tx.ExecContext(ctx, insert,
 			hashKind, hash,
 			vuln.Updater, vuln.Issued.Format(time.RFC3339), vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
@@ -265,9 +317,17 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilities(ctx context.Context, updater
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, strings.Join([]string{vrLower, vrUpper}, "__"), descID, nameID,
 		); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert vulnerability: %w", err)
+			err = fmt.Errorf("failed to insert vulnerability: %w", err)
+			return false
 		}
+
+		return true
+	})
+
+	if err != nil {
+		return uuid.Nil, err
 	}
+
 	if err := tx.Commit(); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -569,7 +629,8 @@ func (ms *sqliteMatcherStore) RecordUpdaterSetStatus(context.Context, string, ti
 	return nil
 }
 
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-func (ms *sqliteMatcherStore) DeltaUpdateVulnerabilities(context.Context, string, driver.Fingerprint, []*claircore.Vulnerability, []string) (uuid.UUID, error) {
-	panic("not implemented") // TODO: Implement when VEX updater is merged
+// DeltaUpdateVulnerabilities in this implementation just calls sqliteMatcherStore.UpdateVulnerabilities as delta updating is not
+// possible or desired in this implementation.
+func (ms *sqliteMatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fp driver.Fingerprint, vulns []*claircore.Vulnerability, del []string) (uuid.UUID, error) {
+	return ms.UpdateVulnerabilities(ctx, updater, fp, vulns)
 }
