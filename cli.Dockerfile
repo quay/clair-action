@@ -9,7 +9,7 @@ RUN go build \
     -o clair-action \
     -trimpath \
     -ldflags="-s -w$(test -n "${CLAIR_ACTION_VERSION}" && printf " -X 'main.Version=%s'" "${CLAIR_ACTION_VERSION}")" \
-    ./cmd/cli
+    ./cmd/clair-action
 
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal as final
