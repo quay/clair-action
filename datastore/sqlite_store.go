@@ -28,7 +28,7 @@ import (
 )
 
 // compile check datastore.MatcherStore implementation
-var _ datastore.MatcherStore = &sqliteMatcherStore{}
+var _ datastore.MatcherStore = (*sqliteMatcherStore)(nil)
 
 type intVersion [10]int32
 
