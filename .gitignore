@@ -1,7 +1,6 @@
-# TODO (crozzy): once claircore PRs are merged, add vendor and build
 /matcher.db
 /tmp
 /feeds
 /reports
 /vendor
-clair-action
+/clair-action
