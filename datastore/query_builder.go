@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/doug-martin/goqu/v8"
+	"github.com/doug-martin/goqu/v8/exp"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -66,6 +67,10 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 			ex = goqu.Ex{"dist_arch": record.Distribution.Arch}
 		case driver.RepositoryName:
 			ex = goqu.Ex{"repo_name": record.Repository.Name}
+		case driver.RepositoryKey:
+			ex = goqu.Ex{"repo_key": record.Repository.Key}
+		case driver.HasFixedInVersion:
+			ex = goqu.Ex{"fixed_in_version": goqu.Op{exp.NeqOp.String(): ""}}
 		default:
 			return "", fmt.Errorf("was provided unknown matcher: %v", m)
 		}
