@@ -44,6 +44,7 @@ func main() {
 		Commands: []*cli.Command{
 			reportCmd,
 			updateCmd,
+			convertCmd,
 		},
 		Flags: []cli.Flag{
 			&cli.StringFlag{
