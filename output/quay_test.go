@@ -64,7 +64,11 @@ func TestQuayReport(t *testing.T) {
 			if totalVulns != tc.numVulns {
 				t.Fatalf("found %d vulns, wanted %d", totalVulns, tc.numVulns)
 			}
-
+			rep, err := json.MarshalIndent(quayReport, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log(string(rep))
 		})
 	}
 }

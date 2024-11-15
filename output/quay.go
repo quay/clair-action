@@ -7,6 +7,7 @@ package output
 import (
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/quay/claircore"
 )
@@ -47,6 +48,8 @@ type Vuln struct {
 	Description   string    `json:"Description"`
 	Name          string    `json:"Name"`
 	Metadata      *Metadata `json:"Metadata"`
+	// This is a departure from the "spec" but needed for Konflux
+	Issued time.Time `json:"Issued"`
 }
 
 type Metadata struct {
@@ -108,6 +111,7 @@ func ReportToSecScan(vr *claircore.VulnerabilityReport) (*QuayReport, error) {
 				FixedBy:       vuln.FixedInVersion,
 				Description:   vuln.Description,
 				Name:          vuln.Name,
+				Issued:        vuln.Issued,
 				Metadata: &Metadata{
 					UpdatedBy:     vuln.Updater,
 					RepoName:      vuln.Repo.Name,
