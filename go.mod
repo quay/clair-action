@@ -2,6 +2,8 @@ module github.com/quay/clair-action
 
 go 1.23.0
 
+toolchain go1.24.1
+
 require (
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/doug-martin/goqu/v9 v9.19.0
@@ -14,7 +16,7 @@ require (
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.34.0
 	github.com/urfave/cli/v2 v2.27.6
-	modernc.org/sqlite v1.36.2
+	modernc.org/sqlite v1.36.3
 )
 
 require (
