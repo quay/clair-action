@@ -38,6 +38,10 @@ inputs:
     description: 'Vulnerability database file created for mode `update` or DB file used for `report` mode'
     required: false
     default: ''
+  updater-timeout:
+    description: 'The http timeout for the requests made by the database update process'
+    required: false
+    default: '120s'
 
 runs:
   using: "docker"
@@ -52,3 +56,4 @@ runs:
     - '-u ${{ inputs.docker-config-dir }}'
     - '-w ${{ inputs.mode }}'
     - '-b ${{ inputs.db-file }}'
+    - '-t ${{ inputs.updater-timeout }}'
