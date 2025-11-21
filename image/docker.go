@@ -26,7 +26,7 @@ type imageInfo struct {
 
 type dockerLocalImage struct {
 	imageDigest string
-	layerPaths  []string
+	layers      []*claircore.Layer
 }
 
 func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string) (*dockerLocalImage, error) {
@@ -41,25 +41,7 @@ func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string
 	tr := tar.NewReader(f)
 	hdr, err := tr.Next()
 	for ; err == nil; hdr, err = tr.Next() {
-		dir, fn := filepath.Split(hdr.Name)
-		if fn == "layer.tar" {
-
-			sha := filepath.Base(dir)
-
-			layerFilePath := filepath.Join(importDir, "sha256:"+sha)
-			layerFile, err := os.OpenFile(layerFilePath, os.O_CREATE|os.O_RDWR, os.FileMode(0600))
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = io.Copy(layerFile, tr)
-			if err != nil {
-				return nil, err
-			}
-
-			di.layerPaths = append(di.layerPaths, layerFile.Name())
-			layerFile.Close()
-		}
+		_, fn := filepath.Split(hdr.Name)
 		if fn == "manifest.json" {
 			_m := []*imageInfo{}
 			b, err := io.ReadAll(tr)
@@ -71,42 +53,46 @@ func NewDockerLocalImage(ctx context.Context, exportDir string, importDir string
 				return nil, err
 			}
 			m = _m[0]
-			digest := strings.TrimSuffix(m.Config, filepath.Ext(m.Config))
+			digest := strings.TrimSuffix(filepath.Base(m.Config), filepath.Ext(m.Config))
 			di.imageDigest = "sha256:" + digest
+			continue
 		}
 	}
-
-	var sortedPaths []string
-	for _, p := range m.Layers {
-		for _, l := range di.layerPaths {
-			if filepath.Dir(p) == strings.TrimPrefix(filepath.Base(l), "sha256:") {
-				sortedPaths = append(sortedPaths, l)
-			}
+	// Rewind and find the layers defined in the manifest.json
+	f.Seek(0, io.SeekStart)
+	tr = tar.NewReader(f)
+	// This is done to ensure the layers are in the order defined in the manifest.json
+	di.layers = make([]*claircore.Layer, len(m.Layers))
+	for {
+		hdr, err = tr.Next()
+		if err == io.EOF {
+			break
 		}
-	}
-	di.layerPaths = sortedPaths
-	return di, nil
-}
-
-func (i *dockerLocalImage) getLayers() ([]*claircore.Layer, error) {
-	if len(i.layerPaths) == 0 {
-		return nil, nil
-	}
-	layers := []*claircore.Layer{}
-	for _, layerStr := range i.layerPaths {
-
-		_, d := filepath.Split(layerStr)
-		hash, err := claircore.ParseDigest(d)
 		if err != nil {
 			return nil, err
 		}
-		l := &claircore.Layer{
-			Hash: hash,
-			URI:  layerStr,
+		start, _ := f.Seek(0, io.SeekCurrent)
+		for i, l := range m.Layers {
+			if hdr.Name == l {
+				ra := io.NewSectionReader(f, start, hdr.Size)
+				fName := strings.TrimSuffix(filepath.Base(l), filepath.Ext(l))
+				hash, err := claircore.ParseDigest("sha256:" + fName)
+				if err != nil {
+					return nil, err
+				}
+				l := &claircore.Layer{
+					Hash: hash,
+				}
+				l.Init(context.Background(), &claircore.LayerDescription{
+					Digest:    "sha256:" + fName,
+					MediaType: "application/vnd.oci.image.layer.v1.tar",
+				}, ra)
+				di.layers[i] = l
+			}
 		}
-		layers = append(layers, l)
 	}
-	return layers, nil
+
+	return di, nil
 }
 
 func (i *dockerLocalImage) GetManifest(_ context.Context) (*claircore.Manifest, error) {
@@ -115,14 +101,9 @@ func (i *dockerLocalImage) GetManifest(_ context.Context) (*claircore.Manifest, 
 		return nil, err
 	}
 
-	layers, err := i.getLayers()
-	if err != nil {
-		return nil, err
-	}
-
 	return &claircore.Manifest{
 		Hash:   digest,
-		Layers: layers,
+		Layers: i.layers,
 	}, nil
 }
 
