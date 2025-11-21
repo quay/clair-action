@@ -1,0 +1,33 @@
+-- index.json --
+{
+    "schemaVersion": 2,
+    "manifests": [
+        {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:869d3637f2f9b10c265e4bab4b0eccfe8770520e6e903e7dd8acf33b4987bfc1",
+            "size": 1040,
+            "annotations": {
+                "org.opencontainers.image.ref.name": "registry.redhat.io/ubi8/nodejs-10@sha256:4bf163fdb2499b9fc965c26d58c5b7c94381cf3b0f2f018d056a8894097507e3"
+            }
+        }
+    ]
+}
+-- blobs/sha256/869d3637f2f9b10c265e4bab4b0eccfe8770520e6e903e7dd8acf33b4987bfc1 --
+{
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+        "digest": "sha256:107d07b9bdecdfbe5fbda13d7c8d63be3e3b13ce53bcd3ec54029c41df582fb1",
+        "size": 4091
+    },
+    "layers": [
+        {
+            "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+            "digest": "sha256:3c6d585e6a72780f0632d16bb8bfd98dfc35b403a11f5cd61925ec31643a76d3",
+            "size": 75995687
+        }
+    ]
+}
+-- blobs/sha256/3c6d585e6a72780f0632d16bb8bfd98dfc35b403a11f5cd61925ec31643a76d3.b64 --
+H4sIAAAAAAAAA+3RQQrCMBCF4Vl7ipwgzbSd5DzFhRuhUCNoT2+yKLpRQQgi/t/mQWYgA8930lwokllNTRYecyNqqjpYCn3Z0xCTibP2p4mcT3lanJP9Mq/r9fneu/mP8t10PMw+X3K7P2rBcRxf9G9b/zHF8q79UMKFdifd/Xn/tf3dt48AAAAAAAAAAAAAAAAA8JEbVuueDAAoAAA=

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
@@ -127,8 +128,8 @@ func report(c *cli.Context) error {
 	)
 
 	var (
-		img image.Image
-		fa  indexer.FetchArena
+		mf *claircore.Manifest
+		fa indexer.FetchArena
 	)
 	switch {
 	case imgRef != "":
@@ -138,17 +139,25 @@ func report(c *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("error setting DOCKER_CONFIG env var")
 		}
-		img = image.NewDockerRemoteImage(ctx, imgRef)
+		mf, err = image.ManifestFromRemote(ctx, imgRef)
+		if err != nil {
+			return fmt.Errorf("error getting image information: %v", err)
+		}
 	case imgPath != "":
 		fa = &LocalFetchArena{}
 		var err error
-		img, err = image.NewDockerLocalImage(ctx, imgPath, os.TempDir())
+		mf, err = image.ManifestFromLocal(ctx, imgPath, os.TempDir())
 		if err != nil {
 			return fmt.Errorf("error getting image information: %v", err)
 		}
 	default:
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
 	}
+	defer func() {
+		for _, l := range mf.Layers {
+			l.Close()
+		}
+	}()
 
 	switch {
 	case dbPath != "":
@@ -184,11 +193,6 @@ func report(c *cli.Context) error {
 	lv, err := libvuln.New(ctx, matcherOpts)
 	if err != nil {
 		return fmt.Errorf("error creating Libvuln: %v", err)
-	}
-
-	mf, err := img.GetManifest(ctx)
-	if err != nil {
-		return fmt.Errorf("error creating manifest: %v", err)
 	}
 
 	indexerOpts := &libindex.Options{
