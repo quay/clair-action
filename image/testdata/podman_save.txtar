@@ -1,0 +1,173 @@
+-- dfd20f40ba9083739c91799f08f4bd57b1c5c840583f9ea6045b8f9cbd3bb539.json --
+{
+    "created": "2024-09-18T21:36:38.331263835Z",
+    "architecture": "amd64",
+    "os": "linux",
+    "config": {
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "container=oci"
+        ],
+        "Cmd": [
+            "/bin/bash"
+        ],
+        "Labels": {
+            "architecture": "x86_64",
+            "build-date": "2024-09-18T21:23:30",
+            "com.redhat.component": "ubi9-container",
+            "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+            "description": "The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+            "distribution-scope": "public",
+            "io.buildah.version": "1.29.0",
+            "io.k8s.description": "The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+            "io.k8s.display-name": "Red Hat Universal Base Image 9",
+            "io.openshift.expose-services": "",
+            "io.openshift.tags": "base rhel9",
+            "maintainer": "Red Hat, Inc.",
+            "name": "ubi9",
+            "release": "1214.1726694543",
+            "summary": "Provides the latest release of Red Hat Universal Base Image 9.",
+            "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/ubi9/images/9.4-1214.1726694543",
+            "vcs-ref": "e309397d02fc53f7fa99db1371b8700eb49f268f",
+            "vcs-type": "git",
+            "vendor": "Red Hat, Inc.",
+            "version": "9.4"
+        }
+    },
+    "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+            "sha256:e7328e803158cca63d8efdbe1caefb1b51654de77e5fa8691079ad06db1abf75"
+        ]
+    },
+    "history": [
+        {
+            "created": "2024-09-18T21:36:31.099323493Z",
+            "created_by": "/bin/sh -c #(nop) ADD file:0067eb9f2ee25ab2d666a7639a85fe707b582902a09242761abf30c53664069b in / ",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.031010231Z",
+            "created_by": "/bin/sh -c mv -f /etc/yum.repos.d/ubi.repo /tmp || :",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.418413433Z",
+            "created_by": "/bin/sh -c #(nop) ADD file:5b1f650e1376d79fa3a65df4a154ea5166def95154b52c1c1097dfd8fc7d58eb in /tmp/tls-ca-bundle.pem ",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.91238548Z",
+            "created_by": "/bin/sh -c #(nop) ADD multi:7a67822d03b1a3ddb205cc3fcf7acd9d3180aef5988a5d25887bc0753a7a493b in /etc/yum.repos.d/ ",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912448474Z",
+            "created_by": "/bin/sh -c #(nop) LABEL maintainer=\"Red Hat, Inc.\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912573716Z",
+            "created_by": "/bin/sh -c #(nop) LABEL com.redhat.component=\"ubi9-container\"       name=\"ubi9\"       version=\"9.4\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912652474Z",
+            "created_by": "/bin/sh -c #(nop) LABEL com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912740628Z",
+            "created_by": "/bin/sh -c #(nop) LABEL summary=\"Provides the latest release of Red Hat Universal Base Image 9.\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912866673Z",
+            "created_by": "/bin/sh -c #(nop) LABEL description=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912921304Z",
+            "created_by": "/bin/sh -c #(nop) LABEL io.k8s.display-name=\"Red Hat Universal Base Image 9\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.912962586Z",
+            "created_by": "/bin/sh -c #(nop) LABEL io.openshift.expose-services=\"\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.913001888Z",
+            "created_by": "/bin/sh -c #(nop) LABEL io.openshift.tags=\"base rhel9\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.913021599Z",
+            "created_by": "/bin/sh -c #(nop) ENV container oci",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.913081151Z",
+            "created_by": "/bin/sh -c #(nop) ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:32.913091001Z",
+            "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:33.824802353Z",
+            "created_by": "/bin/sh -c rm -rf /var/log/*",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:34.766737128Z",
+            "created_by": "/bin/sh -c mkdir -p /var/log/rhsm",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:35.121320055Z",
+            "created_by": "/bin/sh -c #(nop) ADD file:ed34e436a5c2cc729eecd8b15b94c75028aea1cb18b739cafbb293b5e4ad5dae in /root/buildinfo/content_manifests/ubi9-container-9.4-1214.1726694543.json ",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:35.525712655Z",
+            "created_by": "/bin/sh -c #(nop) ADD file:d56bb1961538221b52d7e292418978f186bf67b9906771f38530fc3996a9d0d4 in /root/buildinfo/Dockerfile-ubi9-9.4-1214.1726694543 ",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:35.526152969Z",
+            "created_by": "/bin/sh -c #(nop) LABEL \"release\"=\"1214.1726694543\" \"distribution-scope\"=\"public\" \"vendor\"=\"Red Hat, Inc.\" \"build-date\"=\"2024-09-18T21:23:30\" \"architecture\"=\"x86_64\" \"vcs-type\"=\"git\" \"vcs-ref\"=\"e309397d02fc53f7fa99db1371b8700eb49f268f\" \"io.k8s.description\"=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\" \"url\"=\"https://access.redhat.com/containers/#/registry.access.redhat.com/ubi9/images/9.4-1214.1726694543\"",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:36.481014095Z",
+            "created_by": "/bin/sh -c rm -f '/etc/yum.repos.d/odcs-3496925-3b364.repo' '/etc/yum.repos.d/rhel-9.4-compose-34ae9.repo'",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:37.364179091Z",
+            "created_by": "/bin/sh -c rm -f /tmp/tls-ca-bundle.pem",
+            "empty_layer": true
+        },
+        {
+            "created": "2024-09-18T21:36:41.423178117Z",
+            "created_by": "/bin/sh -c mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :"
+        }
+    ]
+}
+-- manifest.json --
+[
+    {
+        "Config": "dfd20f40ba9083739c91799f08f4bd57b1c5c840583f9ea6045b8f9cbd3bb539.json",
+        "RepoTags": [
+            "registry.access.redhat.com/ubi9:latest"
+        ],
+        "Layers": [
+            "e7328e803158cca63d8efdbe1caefb1b51654de77e5fa8691079ad06db1abf75.tar"
+        ]
+    }
+]
+-- e7328e803158cca63d8efdbe1caefb1b51654de77e5fa8691079ad06db1abf75.tar --
+Nothing to see here
