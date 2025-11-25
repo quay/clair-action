@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-while getopts "r:p:f:o:c:d:u:w:b:" o; do
+while getopts "r:p:f:o:c:d:u:w:b:t:" o; do
    case "${o}" in
        r)
          export imageRef="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
@@ -30,12 +30,15 @@ while getopts "r:p:f:o:c:d:u:w:b:" o; do
        b)
          export dbPath="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
        ;;
+       t)
+         export httpTimeout="$(sed -e 's/^[ \t]*//'<<<"${OPTARG}")"
+       ;;
   esac
 done
 
 if [[ ${mode} = "update" ]]
 then
-  clair-action update --db-path=${dbPath}
+  clair-action update --db-path=${dbPath} ${httpTimeout:+--http-timeout=${httpTimeout}}
 else
   clair-action report \
       --image-path=${GITHUB_WORKSPACE}/${imagePath} \
