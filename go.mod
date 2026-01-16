@@ -8,12 +8,13 @@ require (
 	github.com/google/go-containerregistry v0.20.7
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.8.0
-	github.com/klauspost/compress v1.18.2
+	github.com/klauspost/compress v1.18.3
 	github.com/quay/claircore v1.5.48
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.34.0
 	github.com/urfave/cli/v2 v2.27.7
+	golang.org/x/tools v0.39.0
 	modernc.org/sqlite v1.40.1
 )
 
@@ -72,7 +73,6 @@ require (
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
