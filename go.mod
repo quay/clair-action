@@ -9,12 +9,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.8.0
 	github.com/klauspost/compress v1.18.3
+	github.com/quay/clair/config v1.4.3
 	github.com/quay/claircore v1.5.48
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.34.0
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/tools v0.39.0
+	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.40.1
 )
 
