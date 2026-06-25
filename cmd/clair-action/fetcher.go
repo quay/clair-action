@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -25,15 +26,19 @@ func (*LocalFetchArena) Close(context.Context) error {
 	return nil
 }
 
-type realizer struct{}
+type realizer struct {
+	layers []*claircore.Layer
+}
 
-func (*realizer) Realize(ctx context.Context, ls []*claircore.Layer) error {
-	for _, l := range ls {
-		l.SetLocal(l.URI)
-	}
+func (r *realizer) Realize(_ context.Context, ls []*claircore.Layer) error {
+	r.layers = ls
 	return nil
 }
 
-func (*realizer) Close() error {
-	return nil
+func (r *realizer) Close() error {
+	errs := make([]error, len(r.layers))
+	for i, l := range r.layers {
+		errs[i] = l.Close()
+	}
+	return errors.Join(errs...)
 }

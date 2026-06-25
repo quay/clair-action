@@ -153,12 +153,6 @@ func report(c *cli.Context) error {
 	default:
 		return fmt.Errorf("no $IMAGE_PATH / --image-path or $IMAGE_REF / --image-ref set")
 	}
-	defer func() {
-		for _, l := range mf.Layers {
-			l.Close()
-		}
-	}()
-
 	switch {
 	case dbPath != "":
 	case dbURL != "":
