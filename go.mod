@@ -13,7 +13,7 @@ require (
 	github.com/quay/claircore v1.5.48
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.1
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/tools v0.47.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -38,7 +38,7 @@ require (
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936 // indirect
 	github.com/lib/pq v1.10.3 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
