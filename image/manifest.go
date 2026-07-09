@@ -1,5 +1,3 @@
-// This is lifted from Clairctl
-
 package image
 
 import (
@@ -15,7 +13,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -52,17 +49,24 @@ func rt(ctx context.Context, ref string) (http.RoundTripper, error) {
 	return rt, nil
 }
 
-func ManifestFromRemote(ctx context.Context, r string) (*claircore.Manifest, error) {
-	rt, err := rt(ctx, r)
+// NewRegistryClient returns an [http.Client] that is able to authenticate
+// against authenticates against the registry hosting ref, refreshing
+// credentials as needed. The Authorization header is restricted to the
+// registry host, i.e., it won't be sent to blob storage.
+func NewRegistryClient(ctx context.Context, ref string) (*http.Client, error) {
+	rt, err := rt(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
+	return &http.Client{Transport: rt}, nil
+}
 
+func ManifestFromRemote(ctx context.Context, cl *http.Client, r string) (*claircore.Manifest, error) {
 	ref, err := name.ParseReference(r)
 	if err != nil {
 		return nil, err
 	}
-	desc, err := remote.Get(ref, remote.WithTransport(rt))
+	desc, err := remote.Get(ref, remote.WithTransport(cl.Transport))
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +102,11 @@ func ManifestFromRemote(ctx context.Context, r string) (*claircore.Manifest, err
 		Scheme: repo.Scheme(),
 		Host:   repo.RegistryStr(),
 	}
-	c := http.Client{
-		Transport: rt,
-	}
 
+	// Layer URIs point at the registry's stable blob endpoints. Any
+	// redirect to short-lived presigned storage URLs is followed at fetch
+	// time, inside the fetcher's GET, so the URLs cannot expire between
+	// manifest construction and layer download (quay/clair-action#275).
 	for _, l := range ls {
 		d, err := l.Digest()
 		if err != nil {
@@ -111,27 +116,13 @@ func ManifestFromRemote(ctx context.Context, r string) (*claircore.Manifest, err
 		if err != nil {
 			return nil, err
 		}
-		u, err := rURL.Parse(path.Join("/", "v2", strings.TrimPrefix(repo.RepositoryStr(), repo.RegistryStr()), "blobs", d.String()))
+		u, err := rURL.Parse(path.Join("/", "v2", repo.RepositoryStr(), "blobs", d.String()))
 		if err != nil {
 			return nil, err
 		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Add("Range", "bytes=0-0")
-		res, err := c.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		res.Body.Close()
-
-		res.Request.Header.Del("User-Agent")
-		res.Request.Header.Del("Range")
 		out.Layers = append(out.Layers, &claircore.Layer{
-			Hash:    ccd,
-			URI:     res.Request.URL.String(),
-			Headers: res.Request.Header,
+			Hash: ccd,
+			URI:  u.String(),
 		})
 	}
 

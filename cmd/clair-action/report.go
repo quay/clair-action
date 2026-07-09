@@ -133,13 +133,16 @@ func report(c *cli.Context) error {
 	)
 	switch {
 	case imgRef != "":
-		cl := http.DefaultClient
-		fa = libindex.NewRemoteFetchArena(cl, os.TempDir())
 		err := os.Setenv("DOCKER_CONFIG", dockerConfigDir)
 		if err != nil {
 			return fmt.Errorf("error setting DOCKER_CONFIG env var")
 		}
-		mf, err = image.ManifestFromRemote(ctx, imgRef)
+		cl, err := image.NewRegistryClient(ctx, imgRef)
+		if err != nil {
+			return fmt.Errorf("error creating registry client: %v", err)
+		}
+		fa = libindex.NewRemoteFetchArena(cl, os.TempDir())
+		mf, err = image.ManifestFromRemote(ctx, cl, imgRef)
 		if err != nil {
 			return fmt.Errorf("error getting image information: %v", err)
 		}
