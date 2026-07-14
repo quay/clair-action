@@ -280,6 +280,10 @@ func (ms *sqliteMatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, _ s
 			return false
 		}
 
+		if vuln.Invert {
+			return true
+		}
+
 		// Get or save description
 		var descID int64
 		descID, err = getMetadata(ctx, tx, "description", vuln.Description)
